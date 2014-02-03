@@ -371,4 +371,39 @@ package body GNATCOLL.Terminal is
       end case;
    end Set_Color;
 
-end GNATCOLL.Terminal;
+   -----------------------
+   -- Beginning_Of_Line --
+   -----------------------
+
+   procedure Beginning_Of_Line
+      (Self : in out Terminal_Info;
+       Term : Ada.Text_IO.File_Type := Ada.Text_IO.Standard_Output)
+   is
+      procedure Internal (Stderr : Integer);
+      pragma Import (C, Internal, "gnatcoll_beginning_of_line");
+   begin
+      if Self.FD = File or else Self.Colors = Unsupported then
+         null;
+      else
+         Internal (Boolean'Pos (Self.FD = Stderr));
+      end if;
+   end Beginning_Of_Line;
+
+   --------------------------
+   -- Clear_To_End_Of_Line --
+   --------------------------
+
+   procedure Clear_To_End_Of_Line
+      (Self : in out Terminal_Info;
+       Term : Ada.Text_IO.File_Type := Ada.Text_IO.Standard_Output)
+   is
+      procedure Internal (Stderr : Integer);
+      pragma Import (C, Internal, "gnatcoll_clear_to_end_of_line");
+   begin
+      if Self.FD = File or else Self.Colors = Unsupported then
+         null;
+      else
+         Internal (Boolean'Pos (Self.FD = Stderr));
+      end if;
+   end Clear_To_End_Of_Line;
+ end GNATCOLL.Terminal;

@@ -42,6 +42,10 @@ package GNATCOLL.Terminal is
    --  is where text is actually output. The properties of that File_Type are
    --  queried and cached in the Terminal_Info.
 
+   ------------
+   -- Colors --
+   ------------
+
    type Supports_Color is (Yes, No, Auto);
    procedure Init_For_Stdout
       (Self   : in out Terminal_Info;
@@ -113,6 +117,21 @@ package GNATCOLL.Terminal is
        Style : ANSI_Style;
        Term  : Ada.Text_IO.File_Type := Ada.Text_IO.Standard_Output);
    --  Override specific colors.
+
+   -------------
+   -- Cursors --
+   -------------
+
+   procedure Beginning_Of_Line
+      (Self : in out Terminal_Info;
+       Term : Ada.Text_IO.File_Type := Ada.Text_IO.Standard_Output);
+   --  Move the cursor back to the beginning of the line.
+   --  This has no impact on files, only in interactive terminals.
+
+   procedure Clear_To_End_Of_Line
+      (Self : in out Terminal_Info;
+       Term : Ada.Text_IO.File_Type := Ada.Text_IO.Standard_Output);
+   --  Delete from the cursor position to the end of line
 
 private
    type Color_Sequence_Type is (Unsupported, ANSI_Sequences, WIN32_Sequences);

@@ -53,4 +53,15 @@ begin
    Show ("magenta ", Magenta);
    Show ("cyan    ", Cyan);
    Show ("white   ", Grey);
+
+   for J in 1 .. 1_000 loop
+      if J mod 10 = 0 then
+         Put ("Processing file" & J'Img & " with long name");
+      else
+         Put ("Processing file" & J'Img);
+      end if;
+      delay 0.1;
+      Info.Beginning_Of_Line (Standard_Output);
+      Info.Clear_To_End_Of_Line (Standard_Output);
+   end loop;
 end Test_Colors;

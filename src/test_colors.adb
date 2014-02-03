@@ -32,7 +32,7 @@ procedure Test_Colors is
    end Show;
 
 begin
-   Info.Init (Ada.Text_IO.Standard_Output, Auto);
+   Info.Init_For_Stdout (Auto);
 
    Header ("        ", Reset);
    Header ("black  ", Black);

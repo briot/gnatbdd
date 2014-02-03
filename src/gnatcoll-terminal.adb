@@ -52,74 +52,83 @@ package body GNATCOLL.Terminal is
        Attrs : Integer);
    --  Windows-specific implementation to change the attributes of the console
 
-   ----------
-   -- Init --
-   ----------
+   procedure Decode_Windows_Attributes
+      (Self  : in out Terminal_Info'Class;
+       Attrs : Integer);
+   --  Decode the value of the attributes returned by Windows, into the
+   --  default parameters for the terminal.
 
-   procedure Init
-      (Self   : in out Terminal_Info;
-       Term   : Ada.Text_IO.File_Type := Ada.Text_IO.Standard_Output;
-       Colors : Supports_Color := Auto)
+   procedure Auto_Detect_Colors
+      (Self    : in out Terminal_Info'Class;
+       Support : Supports_Color);
+   --  Auto-detect whether colors are supported
+
+   function getConsoleScreenBufferInfo (Stderr : Integer) return Integer;
+   pragma Import (C, getConsoleScreenBufferInfo,
+                  "gnatcoll_get_console_screen_buffer_info");
+
+   function terminal_has_colors (Fd : File_Descriptor) return Integer;
+   pragma Import (C, terminal_has_colors, "gnatcoll_terminal_has_colors");
+   --  Whether Fd is a terminal that supports color output
+
+   -------------------------------
+   -- Decode_Windows_Attributes --
+   -------------------------------
+
+   procedure Decode_Windows_Attributes
+      (Self  : in out Terminal_Info'Class;
+       Attrs : Integer)
    is
-      function getConsoleScreenBufferInfo (Stderr : Integer) return Integer;
-      pragma Import (C, getConsoleScreenBufferInfo,
-                     "gnatcoll_get_console_screen_buffer_info");
-
       type Mod_32 is mod 2 ** 32;
-      Attrs : Mod_32;
+      A : Mod_32;
    begin
-      Self.Is_Stderr := False;  --   ???
+      Self.Default_Fore := Black;
+      Self.Default_Back := Grey;
+      Self.Default_Style := Normal;
 
-      if On_Windows then
-         Attrs := Mod_32
-            (getConsoleScreenBufferInfo(Boolean'Pos (Self.Is_Stderr)));
-         if Attrs = -1 then
-            Self.Colors := Unsupported;
-         else
-            case Attrs and 7 is
-               when 0      => Self.Default_Fore := Black;
-               when 1      => Self.Default_Fore := Blue;
-               when 2      => Self.Default_Fore := Green;
-               when 3      => Self.Default_Fore := Cyan;
-               when 4      => Self.Default_Fore := Red;
-               when 5      => Self.Default_Fore := Magenta;
-               when 6      => Self.Default_Fore := Yellow;
-               when others => Self.Default_Fore := Grey ;
-            end case;
-
-            case (Attrs / 16) and 7 is
-               when 0      => Self.Default_Back := Black;
-               when 1      => Self.Default_Back := Blue;
-               when 2      => Self.Default_Back := Green;
-               when 3      => Self.Default_Back := Cyan;
-               when 4      => Self.Default_Back := Red;
-               when 5      => Self.Default_Back := Magenta;
-               when 6      => Self.Default_Back := Yellow;
-               when others => Self.Default_Back := Grey ;
-            end case;
-
-            if (Attrs and 16#08#) /= 0 then
-               Self.Default_Style := Bright;
-            else
-               Self.Default_Style := Normal;
-            end if;
-
-            Set_Has_Colors (Self, Term, Colors);
-         end if;
-
+      if not On_Windows then
+         return;
+      elsif Attrs = -1 then
+         Self.Colors := Unsupported;
       else
-         Set_Has_Colors (Self, Term, Colors);
+         A := Mod_32 (Attrs);
+         case A and 7 is
+            when 0      => Self.Default_Fore := Black;
+            when 1      => Self.Default_Fore := Blue;
+            when 2      => Self.Default_Fore := Green;
+            when 3      => Self.Default_Fore := Cyan;
+            when 4      => Self.Default_Fore := Red;
+            when 5      => Self.Default_Fore := Magenta;
+            when 6      => Self.Default_Fore := Yellow;
+            when others => Self.Default_Fore := Grey ;
+         end case;
+
+         case (A / 16) and 7 is
+            when 0      => Self.Default_Back := Black;
+            when 1      => Self.Default_Back := Blue;
+            when 2      => Self.Default_Back := Green;
+            when 3      => Self.Default_Back := Cyan;
+            when 4      => Self.Default_Back := Red;
+            when 5      => Self.Default_Back := Magenta;
+            when 6      => Self.Default_Back := Yellow;
+            when others => Self.Default_Back := Grey ;
+         end case;
+
+         if (A and 16#08#) /= 0 then
+            Self.Default_Style := Bright;
+         else
+            Self.Default_Style := Normal;
+         end if;
       end if;
-   end Init;
+   end Decode_Windows_Attributes;
 
-   --------------------
-   -- Set_Has_Colors --
-   --------------------
+   ------------------------
+   -- Auto_Detect_Colors --
+   ------------------------
 
-   procedure Set_Has_Colors
-      (Self    : in out Terminal_Info;
-       Term    : Ada.Text_IO.File_Type := Ada.Text_IO.Standard_Output;
-       Support : Supports_Color := Auto)
+   procedure Auto_Detect_Colors
+      (Self    : in out Terminal_Info'Class;
+       Support : Supports_Color)
    is
       Env : String_Access;
    begin
@@ -142,7 +151,7 @@ package body GNATCOLL.Terminal is
 
          when Auto =>
             if On_Windows then
-               --  ??? Should check that we have a tty, not a file
+               --  This procedure is only called for stdout or stderr
                Env := Getenv ("ANSICON");
                if Env = null or else Env.all = "" then
                   Self.Colors := WIN32_Sequences;
@@ -150,15 +159,73 @@ package body GNATCOLL.Terminal is
                   Self.Colors := ANSI_Sequences;
                end if;
                Free (Env);
+
             else
-               --  ??? Should check whether we have a 'tty'
-               --  ??? if TermInfo.default_object.tigetnum("colors") == 0:
-               --         unsupported
-               --  ??? could look at the TERM environment variable
-               Self.Colors := ANSI_Sequences;
+               if Self.FD = Stdout
+                  and then terminal_has_colors (Standout) /= 0
+               then
+                  Self.Colors := ANSI_Sequences;
+               elsif Self.FD = Stderr
+                  and then terminal_has_colors (Standerr) /= 0
+               then
+                  Self.Colors := ANSI_Sequences;
+               else
+                  Self.Colors := Unsupported;
+               end if;
             end if;
       end case;
-   end Set_Has_Colors;
+   end Auto_Detect_Colors;
+
+   ---------------------
+   -- Init_For_Stdout --
+   ---------------------
+
+   procedure Init_For_Stdout
+      (Self   : in out Terminal_Info;
+       Colors : Supports_Color := Auto)
+   is
+   begin
+      Self.FD := Stdout;
+      Auto_Detect_Colors (Self, Colors);
+      Decode_Windows_Attributes
+         (Self, getConsoleScreenBufferInfo(Stderr => 0));
+   end Init_For_Stdout;
+
+   ---------------------
+   -- Init_For_Stderr --
+   ---------------------
+
+   procedure Init_For_Stderr
+      (Self   : in out Terminal_Info;
+       Colors : Supports_Color := Auto)
+   is
+   begin
+      Self.FD := Stderr;
+      Auto_Detect_Colors (Self, Colors);
+      Decode_Windows_Attributes
+         (Self, getConsoleScreenBufferInfo(Stderr => 1));
+   end Init_For_Stderr;
+ 
+   -------------------
+   -- Init_For_File --
+   -------------------
+
+   procedure Init_For_File
+      (Self   : in out Terminal_Info;
+       Term   : Ada.Text_IO.File_Type := Ada.Text_IO.Standard_Output;
+       Colors : Supports_Color := Auto) is
+   begin
+      Self.FD := File;
+      
+      case Colors is
+         when Yes =>
+            --  Have to use ANSI sequences, since WIN32 sequences call
+            --  subprograms on the terminal itself.
+            Self.Colors := ANSI_Sequences;
+         when No | Auto =>
+            Self.Colors := Unsupported;
+      end case;
+   end Init_For_File;
 
    ----------------
    -- Has_Colors --
@@ -181,7 +248,7 @@ package body GNATCOLL.Terminal is
       pragma Import (C, Set_Console_Text_Attribute,
                      "gnatcoll_set_console_text_attribute");
    begin
-      Set_Console_Text_Attribute (Boolean'Pos (Self.Is_Stderr), Attrs);
+      Set_Console_Text_Attribute (Boolean'Pos (Self.FD = Stderr), Attrs);
    end Win_Set_Console;
 
    ------------

@@ -43,21 +43,26 @@ package GNATCOLL.Terminal is
    --  queried and cached in the Terminal_Info.
 
    type Supports_Color is (Yes, No, Auto);
-   procedure Set_Has_Colors
-      (Self    : in out Terminal_Info;
-       Term    : Ada.Text_IO.File_Type := Ada.Text_IO.Standard_Output;
-       Support : Supports_Color := Auto);
-   function Has_Colors (Self : Terminal_Info) return Boolean;
-   --  Whether the terminals supports colors. You can use Set_Has_Colors
-   --  to force the unconditional use of colors, or to disable it. The default
-   --  is always to automatically detect whether they are supported.
-
-   procedure Init
+   procedure Init_For_Stdout
+      (Self   : in out Terminal_Info;
+       Colors : Supports_Color := Auto);
+   procedure Init_For_Stderr
+      (Self   : in out Terminal_Info;
+       Colors : Supports_Color := Auto);
+   procedure Init_For_File
       (Self   : in out Terminal_Info;
        Term   : Ada.Text_IO.File_Type := Ada.Text_IO.Standard_Output;
        Colors : Supports_Color := Auto);
-   --  Init Self. If Colors is Auto, checks whether Self supports color
-   --  output.
+   --  Checks whether the terminal supports colors. By default, automatic
+   --  detection is attempted, but this can be overridden by the use of the
+   --  Colors parameter.
+   --  The three variants depend on which type of terminal you are outputting
+   --  to. Unfortunately, the type Ada.Text_IO.File_Type is opaque and it is
+   --  not possible to check what is applies to, or what are the properties of
+   --  the underling file handle.
+
+   function Has_Colors (Self : Terminal_Info) return Boolean;
+   --  Whether the terminals supports colors.
 
    type ANSI_Color is
       (Unchanged,
@@ -112,6 +117,9 @@ package GNATCOLL.Terminal is
 private
    type Color_Sequence_Type is (Unsupported, ANSI_Sequences, WIN32_Sequences);
 
+   type FD_Type is (Stdout, Stderr, File);
+   --  What type of file descriptor the terminal_info applies to.
+
    type Terminal_Info is tagged record
       Colors : Color_Sequence_Type := Unsupported;
 
@@ -126,7 +134,7 @@ private
       Default_Style : ANSI_Style := Normal;
       --  Default windows attributes (computed in Init)
 
-      Is_Stderr : Boolean := False;
+      FD : FD_Type := Stdout;
       --  Whether the associated terminal is stdout (windows only)
    end record;
 

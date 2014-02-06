@@ -63,7 +63,7 @@ package BDD.Parser is
    type Feature_Parser is tagged private;
 
    procedure Parse
-     (Self     : Feature_Parser;
+     (Self     : in out Feature_Parser;
       File     : GNATCOLL.VFS.Virtual_File;
       Runner   : in out Abstract_Feature_Runner'Class);
    --  Parses a .feature file.
@@ -74,7 +74,9 @@ package BDD.Parser is
 
 private
    type Feature_Parser is tagged record
-      null;
+      F_Id   : Natural := 1;
+      --  Unique Id for the features that are parsed.
+      --  This is increased for all new feature found by this parser.
    end record;
 
 end BDD.Parser;

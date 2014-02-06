@@ -84,7 +84,7 @@ package body BDD.Runner is
    procedure Run
      (Self   : in out Feature_Runner;
       Format : not null access BDD.Formatters.Formatter'Class;
-      Parser : BDD.Parser.Feature_Parser'Class)
+      Parser : in out BDD.Parser.Feature_Parser'Class)
    is
    begin
       if Self.Files /= null then
@@ -97,6 +97,21 @@ package body BDD.Runner is
       end if;
    end Run;
 
+   --------------------
+   -- Scenario_Start --
+   --------------------
+
+   overriding procedure Scenario_Start
+     (Self     : in out Feature_Runner;
+      Feature  : in out BDD.Features.Feature'Class;
+      Scenario : in out BDD.Features.Scenario'Class)
+   is
+   begin
+      if Scenario.Kind = Kind_Scenario then
+         Self.Format.Scenario_Start (Feature, Scenario);
+      end if;
+   end Scenario_Start;
+
    ------------------
    -- Scenario_End --
    ------------------
@@ -106,16 +121,14 @@ package body BDD.Runner is
       Feature  : in out BDD.Features.Feature'Class;
       Scenario : in out BDD.Features.Scenario'Class)
    is
+      Status : Scenario_Status;
    begin
       if Scenario.Kind = Kind_Scenario then
-         if not Feature.Displayed then
-            Self.Format.Display_Feature (Feature);
-            Feature.Set_Displayed;
-         end if;
+         Status := Status_Failed;
 
-         Self.Format.Display_Scenario (Feature, Scenario);
+         delay 1.0;
 
-         Self.Format.Scenario_Completed (Feature, Scenario);
+         Self.Format.Scenario_Completed (Feature, Scenario, Status);
       end if;
    end Scenario_End;
 

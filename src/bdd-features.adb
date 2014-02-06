@@ -32,7 +32,7 @@ package body BDD.Features is
    procedure Free (Self : in out Feature) is
    begin
       Self.File := No_File;
-      Self.Displayed := False;
+      Self.Id := -1;
       Free (Self.Name);
       Self.Description := Null_Unbounded_String;
    end Free;
@@ -79,22 +79,22 @@ package body BDD.Features is
    end File;
 
    -------------------
-   -- Set_Displayed --
+   -- Set_Unique_Id --
    -------------------
 
-   procedure Set_Displayed (Self : in out Feature) is
+   procedure Set_Unique_Id (Self : in out Feature; Id : Integer) is
    begin
-      Self.Displayed := True;
-   end Set_Displayed;
+      Self.Id := Id;
+   end Set_Unique_Id;
 
-   ---------------
-   -- Displayed --
-   ---------------
+   --------
+   -- Id --
+   --------
 
-   function Displayed (Self : Feature) return Boolean is
+   function Id (Self : Feature) return Integer is
    begin
-      return Self.Displayed;
-   end Displayed;
+      return Self.Id;
+   end Id;
 
    ----------
    -- Free --

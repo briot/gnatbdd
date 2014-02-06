@@ -59,6 +59,12 @@ package BDD is
    Output : Output_Type := Output_Dots;
    --  The kind of output the user expects
 
+   type Scenario_Status is
+     (Status_Passed,
+      Status_Failed,
+      Status_Undefined,
+      Status_Skipped);
+
    procedure Command_Line_Switches;
    --  Handles the command line switches
 

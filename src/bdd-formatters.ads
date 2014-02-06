@@ -36,22 +36,18 @@ package BDD.Formatters is
    --  Prepare the output for a specific terminal.
    --  This controls, among other things, whether the output supports colors.
 
-   procedure Display_Feature
-     (Self    : Formatter;
-      Feature : BDD.Features.Feature'Class) is null;
-   --  Display information about a feature just before it is run, for instance
-   --  its name and description.
-
-   procedure Display_Scenario
-     (Self     : Formatter;
+   procedure Scenario_Start
+     (Self     : in out Formatter;
       Feature  : BDD.Features.Feature'Class;
       Scenario : BDD.Features.Scenario'Class) is null;
-   --  Display information about a scenario just before it is run
+   --  Display information about a feature and ascenario just before the
+   --  scenario is run.
 
    procedure Scenario_Completed
-     (Self     : Formatter;
+     (Self     : in out Formatter;
       Feature  : BDD.Features.Feature'Class;
-      Scenario : BDD.Features.Scenario'Class) is null;
+      Scenario : BDD.Features.Scenario'Class;
+      Status   : BDD.Scenario_Status) is null;
    --  Called when a scenario has completed
 
    function Create_Formatter return not null access Formatter'Class;
@@ -65,17 +61,15 @@ package BDD.Formatters is
    --  A formatter that displays all the features, scenarios and steps that
    --  are executed
 
-   overriding procedure Display_Feature
-     (Self    : Formatter_Full;
-      Feature : BDD.Features.Feature'Class);
-   overriding procedure Display_Scenario
-     (Self     : Formatter_Full;
+   overriding procedure Scenario_Start
+     (Self     : in out Formatter_Full;
       Feature  : BDD.Features.Feature'Class;
       Scenario : BDD.Features.Scenario'Class);
    overriding procedure Scenario_Completed
-     (Self     : Formatter_Full;
+     (Self     : in out Formatter_Full;
       Feature  : BDD.Features.Feature'Class;
-      Scenario : BDD.Features.Scenario'Class);
+      Scenario : BDD.Features.Scenario'Class;
+      Status   : BDD.Scenario_Status);
 
    ----------
    -- Dots --
@@ -84,9 +78,10 @@ package BDD.Formatters is
    type Formatter_Dots is new Formatter with private;
 
    overriding procedure Scenario_Completed
-     (Self     : Formatter_Dots;
+     (Self     : in out Formatter_Dots;
       Feature  : BDD.Features.Feature'Class;
-      Scenario : BDD.Features.Scenario'Class);
+      Scenario : BDD.Features.Scenario'Class;
+      Status   : BDD.Scenario_Status);
 
    -----------
    -- Quiet --
@@ -94,19 +89,43 @@ package BDD.Formatters is
 
    type Formatter_Quiet is new Formatter with private;
 
+   overriding procedure Scenario_Start
+     (Self     : in out Formatter_Quiet;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class);
+   overriding procedure Scenario_Completed
+     (Self     : in out Formatter_Quiet;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class;
+      Status   : BDD.Scenario_Status);
+
    -----------------
    -- Hide_Passed --
    -----------------
 
    type Formatter_Hide_Passed is new Formatter with private;
 
+   overriding procedure Scenario_Start
+     (Self     : in out Formatter_Hide_Passed;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class);
+   overriding procedure Scenario_Completed
+     (Self     : in out Formatter_Hide_Passed;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class;
+      Status   : BDD.Scenario_Status);
+
 private
    type Formatter is abstract tagged record
       Term : GNATCOLL.Terminal.Terminal_Info_Access;
+      Last_Displayed_Feature_Id : Integer := -1;
+      Progress_Displayed : Boolean := False;
    end record;
 
    type Formatter_Full  is new Formatter with null record;
+
    type Formatter_Dots  is new Formatter with null record;
+
    type Formatter_Quiet is new Formatter with null record;
    type Formatter_Hide_Passed is new Formatter with null record;
 

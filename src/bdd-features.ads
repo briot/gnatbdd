@@ -66,6 +66,10 @@ package BDD.Features is
    procedure Free (Self : in out Feature);
    --  Free the memory associated with Self
 
+   procedure Set_Unique_Id (Self : in out Feature; Id : Integer);
+   function Id (Self : Feature) return Integer;
+   --  Set a unique id for the feature
+
    procedure Set_Name (Self : in out Feature; Name : String);
    function Name (Self : Feature) return String;
    --  The name of the feature
@@ -74,13 +78,6 @@ package BDD.Features is
      (Self : in out Feature; File : GNATCOLL.VFS.Virtual_File);
    function File (Self : Feature) return GNATCOLL.VFS.Virtual_File;
    --  The file in which the feature is defined
-
-   procedure Set_Displayed (Self : in out Feature);
-   function Displayed (Self : Feature) return Boolean;
-   --  Whether the feature has already been displayed on the screen.
-   --  This is used when displaying the output, because some of the tests
-   --  could be filtered out, and we only want to display the feature info
-   --  when at least one scenario is run.
 
    function Description (Self : Feature) return String;
    procedure Add_Description (Self : in out Feature; Descr : String);
@@ -100,7 +97,7 @@ private
    type Feature is tagged limited record
       File        : GNATCOLL.VFS.Virtual_File;
       Name        : GNAT.Strings.String_Access;
-      Displayed   : Boolean := False;
+      Id          : Integer;
       Description : Ada.Strings.Unbounded.Unbounded_String;
    end record;
 end BDD.Features;

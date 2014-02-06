@@ -53,7 +53,7 @@ package BDD.Runner is
    procedure Run
      (Self   : in out Feature_Runner;
       Format : not null access BDD.Formatters.Formatter'Class;
-      Parser : BDD.Parser.Feature_Parser'Class);
+      Parser : in out BDD.Parser.Feature_Parser'Class);
    --  Run all features and their scenarios.
    --
    --  Each of the features file is parsed through Parser. This allows you to
@@ -63,6 +63,10 @@ package BDD.Runner is
    --  scenarios are run in the order they were defined in in the features
    --  file.
 
+   overriding procedure Scenario_Start
+     (Self     : in out Feature_Runner;
+      Feature  : in out BDD.Features.Feature'Class;
+      Scenario : in out BDD.Features.Scenario'Class);
    overriding procedure Scenario_End
      (Self     : in out Feature_Runner;
       Feature  : in out BDD.Features.Feature'Class;

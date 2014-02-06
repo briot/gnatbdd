@@ -26,11 +26,32 @@ with GNATCOLL.Utils; use GNATCOLL.Utils;
 
 package body BDD.Formatters is
 
+   function Scenario_Name
+     (Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class) return String;
+   --  Return a string used to identify the scenario for the user.
+
    procedure Display_Location
      (Self     : Formatter'Class;
       Feature  : BDD.Features.Feature'Class;
       Scenario : BDD.Features.Scenario'Class);
    --  Display location information for the scenario
+
+   procedure Display_Scenario_Header
+     (Self     : in out Formatter'Class;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class);
+   --  Display the feature and scenario headers, as needed.
+
+   procedure Display_Progress
+     (Self     : in out Formatter'Class;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class);
+   --  Display the name of the scenario being run, if supported by the
+   --  terminal
+
+   procedure Clear_Progress (Self : in out Formatter'Class);
+   --  Clear progress indicator if needed.
 
    ----------
    -- Init --
@@ -43,6 +64,20 @@ package body BDD.Formatters is
    begin
       Self.Term := Term;
    end Init;
+
+   -------------------
+   -- Scenario_Name --
+   -------------------
+
+   function Scenario_Name
+     (Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class) return String
+   is
+   begin
+      return +Feature.File.Relative_Path (Features_Directory)
+        & "#" & Image (Scenario.Index, 1)
+        & ":" & Image (Scenario.Line, 1);
+   end Scenario_Name;
 
    ----------------------
    -- Display_Location --
@@ -57,55 +92,108 @@ package body BDD.Formatters is
       Self.Term.Set_Color
         (Term       => Ada.Text_IO.Standard_Output,
          Foreground => Grey);
-      Put ("# "
-           & (+Feature.File.Relative_Path (Features_Directory))
-           & "#" & Image (Scenario.Index, 1)
-           & ":" & Image (Scenario.Line, 1));
+      Put ("# " & Scenario_Name (Feature, Scenario));
       Self.Term.Set_Color
         (Term       => Ada.Text_IO.Standard_Output,
          Style      => Reset_All);
       New_Line;
    end Display_Location;
 
-   ---------------------
-   -- Display_Feature --
-   ---------------------
+   ----------------------
+   -- Display_Progress --
+   ----------------------
 
-   overriding procedure Display_Feature
-     (Self    : Formatter_Full;
-      Feature : BDD.Features.Feature'Class)
+   procedure Display_Progress
+     (Self     : in out Formatter'Class;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class)
    is
-      pragma Unreferenced (Self);
+      Width : constant Integer := Self.Term.Get_Width;
    begin
-      Put_Line (Cst_Features & ' ' & Feature.Name);
-      Put_Line (Feature.Description);
-   end Display_Feature;
+      if Width /= -1 then
+         declare
+            N : constant String := Scenario_Name (Feature, Scenario);
+         begin
+            Self.Term.Beginning_Of_Line;
+            Self.Term.Clear_To_End_Of_Line;
+            Self.Term.Set_Color
+              (Term       => Ada.Text_IO.Standard_Output,
+               Foreground => Grey);
+            Put
+              ("Running: "
+               & N (N'First .. Integer'Min (N'Last, N'First + Width - 10)));
+            Self.Term.Set_Color
+              (Term       => Ada.Text_IO.Standard_Output,
+               Style      => Reset_All);
+            Self.Term.Beginning_Of_Line;
 
-   ----------------------
-   -- Display_Scenario --
-   ----------------------
+            Self.Progress_Displayed := True;
+         end;
+      end if;
+   end Display_Progress;
 
-   overriding procedure Display_Scenario
-     (Self     : Formatter_Full;
+   --------------------
+   -- Clear_Progress --
+   --------------------
+
+   procedure Clear_Progress (Self : in out Formatter'Class) is
+   begin
+      if Self.Progress_Displayed then
+         Self.Progress_Displayed := False;
+
+         Self.Term.Beginning_Of_Line;
+         Self.Term.Clear_To_End_Of_Line;
+      end if;
+   end Clear_Progress;
+
+   -----------------------------
+   -- Display_Scenario_Header --
+   -----------------------------
+
+   procedure Display_Scenario_Header
+     (Self     : in out Formatter'Class;
       Feature  : BDD.Features.Feature'Class;
       Scenario : BDD.Features.Scenario'Class)
    is
    begin
+      if Feature.Id /= Self.Last_Displayed_Feature_Id then
+         Put_Line (Cst_Features & ' ' & Feature.Name);
+         Put_Line (Feature.Description);
+         Self.Last_Displayed_Feature_Id := Feature.Id;
+      end if;
+
       Put ("  " & Cst_Scenario & ' ' & Scenario.Name & "  ");
       Display_Location (Self, Feature, Scenario);
-   end Display_Scenario;
+   end Display_Scenario_Header;
+
+   --------------------
+   -- Scenario_Start --
+   --------------------
+
+   overriding procedure Scenario_Start
+     (Self     : in out Formatter_Full;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class)
+   is
+   begin
+      Clear_Progress (Self);
+      Display_Scenario_Header (Self, Feature, Scenario);
+      Display_Progress (Self, Feature, Scenario);
+   end Scenario_Start;
 
    ------------------------
    -- Scenario_Completed --
    ------------------------
 
    overriding procedure Scenario_Completed
-     (Self     : Formatter_Full;
+     (Self     : in out Formatter_Full;
       Feature  : BDD.Features.Feature'Class;
-      Scenario : BDD.Features.Scenario'Class)
+      Scenario : BDD.Features.Scenario'Class;
+      Status   : BDD.Scenario_Status)
    is
-      pragma Unreferenced (Self, Feature, Scenario);
+      pragma Unreferenced (Feature, Scenario, Status);
    begin
+      Clear_Progress (Self);
       New_Line;
    end Scenario_Completed;
 
@@ -114,13 +202,86 @@ package body BDD.Formatters is
    ------------------------
 
    overriding procedure Scenario_Completed
-     (Self     : Formatter_Dots;
+     (Self     : in out Formatter_Dots;
       Feature  : BDD.Features.Feature'Class;
-      Scenario : BDD.Features.Scenario'Class)
+      Scenario : BDD.Features.Scenario'Class;
+      Status   : BDD.Scenario_Status)
    is
       pragma Unreferenced (Self, Feature, Scenario);
    begin
-      Put (".");
+      case Status is
+         when Status_Passed =>
+            Put (".");
+         when Status_Failed =>
+            Put ("F");
+         when Status_Undefined =>
+            Put ("U");
+         when Status_Skipped =>
+            Put ("-");
+      end case;
+   end Scenario_Completed;
+
+   --------------------
+   -- Scenario_Start --
+   --------------------
+
+   overriding procedure Scenario_Start
+     (Self     : in out Formatter_Quiet;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class)
+   is
+   begin
+      Display_Progress (Self, Feature, Scenario);
+   end Scenario_Start;
+
+   ------------------------
+   -- Scenario_Completed --
+   ------------------------
+
+   overriding procedure Scenario_Completed
+     (Self     : in out Formatter_Quiet;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class;
+      Status   : BDD.Scenario_Status)
+   is
+      pragma Unreferenced (Feature, Scenario, Status);
+   begin
+      Clear_Progress (Self);
+   end Scenario_Completed;
+
+   --------------------
+   -- Scenario_Start --
+   --------------------
+
+   procedure Scenario_Start
+     (Self     : in out Formatter_Hide_Passed;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class)
+   is
+   begin
+      Display_Progress (Self, Feature, Scenario);
+   end Scenario_Start;
+
+   ------------------------
+   -- Scenario_Completed --
+   ------------------------
+
+   overriding procedure Scenario_Completed
+     (Self     : in out Formatter_Hide_Passed;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class;
+      Status   : BDD.Scenario_Status)
+   is
+   begin
+      case Status is
+         when Status_Passed | Status_Skipped =>
+            null;
+
+         when Status_Failed | Status_Undefined =>
+            Clear_Progress (Self);
+            Display_Scenario_Header (Self, Feature, Scenario);
+            New_Line;
+      end case;
    end Scenario_Completed;
 
    ----------------------

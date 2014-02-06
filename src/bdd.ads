@@ -22,6 +22,7 @@
 ------------------------------------------------------------------------------
 
 with GNAT.Strings;      use GNAT.Strings;
+with GNATCOLL.Terminal;
 with GNATCOLL.VFS;      use GNATCOLL.VFS;
 
 package BDD is
@@ -43,7 +44,25 @@ package BDD is
      Create_From_Base ("features");
    --  The parent directory for all features file.
 
-   Features_File_Ext : GNAT.Strings.String_Access := new String'(".feature");
+   Features_File_Ext : aliased GNAT.Strings.String_Access :=
+     new String'(".feature");
    --  Extension for the features file
+
+   Colors : GNATCOLL.Terminal.Supports_Color := GNATCOLL.Terminal.Auto;
+   --  Whether we should use colors in the output
+
+   type Output_Type is
+     (Output_Quiet,
+      Output_Dots,
+      Output_Hide_Passed,
+      Output_Full);
+   Output : Output_Type := Output_Dots;
+   --  The kind of output the user expects
+
+   procedure Command_Line_Switches;
+   --  Handles the command line switches
+
+   procedure Main;
+   --  The main loop, which discovers and then runs all the tests
 
 end BDD;

@@ -109,4 +109,36 @@ package body BDD.Formatters is
       New_Line;
    end Scenario_Completed;
 
+   ------------------------
+   -- Scenario_Completed --
+   ------------------------
+
+   overriding procedure Scenario_Completed
+     (Self     : Formatter_Dots;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class)
+   is
+      pragma Unreferenced (Self, Feature, Scenario);
+   begin
+      Put (".");
+   end Scenario_Completed;
+
+   ----------------------
+   -- Create_Formatter --
+   ----------------------
+
+   function Create_Formatter return not null access Formatter'Class is
+   begin
+      case BDD.Output is
+         when Output_Hide_Passed =>
+            return new Formatter_Hide_Passed;
+         when Output_Quiet =>
+            return new Formatter_Quiet;
+         when Output_Dots =>
+            return new Formatter_Dots;
+         when Output_Full =>
+            return new Formatter_Full;
+      end case;
+   end Create_Formatter;
+
 end BDD.Formatters;

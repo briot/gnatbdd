@@ -54,6 +54,13 @@ package BDD.Formatters is
       Scenario : BDD.Features.Scenario'Class) is null;
    --  Called when a scenario has completed
 
+   function Create_Formatter return not null access Formatter'Class;
+   --  Create the formatter to use, depending on BDD.Output
+
+   ----------
+   -- Full --
+   ----------
+
    type Formatter_Full is new Formatter with private;
    --  A formatter that displays all the features, scenarios and steps that
    --  are executed
@@ -70,11 +77,37 @@ package BDD.Formatters is
       Feature  : BDD.Features.Feature'Class;
       Scenario : BDD.Features.Scenario'Class);
 
+   ----------
+   -- Dots --
+   ----------
+
+   type Formatter_Dots is new Formatter with private;
+
+   overriding procedure Scenario_Completed
+     (Self     : Formatter_Dots;
+      Feature  : BDD.Features.Feature'Class;
+      Scenario : BDD.Features.Scenario'Class);
+
+   -----------
+   -- Quiet --
+   -----------
+
+   type Formatter_Quiet is new Formatter with private;
+
+   -----------------
+   -- Hide_Passed --
+   -----------------
+
+   type Formatter_Hide_Passed is new Formatter with private;
+
 private
    type Formatter is abstract tagged record
       Term : GNATCOLL.Terminal.Terminal_Info_Access;
    end record;
 
-   type Formatter_Full is new Formatter with null record;
+   type Formatter_Full  is new Formatter with null record;
+   type Formatter_Dots  is new Formatter with null record;
+   type Formatter_Quiet is new Formatter with null record;
+   type Formatter_Hide_Passed is new Formatter with null record;
 
 end BDD.Formatters;

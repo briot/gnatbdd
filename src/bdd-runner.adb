@@ -21,8 +21,6 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with BDD.Parser;  use BDD.Parser;
-
 package body BDD.Runner is
 
    --------------
@@ -79,22 +77,46 @@ package body BDD.Runner is
       Append (Self.Files, Files);
    end Register;
 
-   --------------
-   -- For_Each --
-   --------------
+   ---------
+   -- Run --
+   ---------
 
-   procedure For_Each
-     (Self      : in out Feature_Runner;
-      Callback  : access procedure (F : Feature))
+   procedure Run
+     (Self   : in out Feature_Runner;
+      Format : not null access BDD.Formatters.Formatter'Class;
+      Parser : BDD.Parser.Feature_Parser'Class)
    is
-      Parser : Feature_Parser;
    begin
       if Self.Files /= null then
+         Self.Format := Format;
          Sort (Self.Files.all);
          for F in Self.Files'Range loop
-            Parser.Parse (Self.Files (F), Callback);
+            Parser.Parse (Self.Files (F), Self);
          end loop;
+         Self.Format := null;
       end if;
-   end For_Each;
+   end Run;
+
+   ------------------
+   -- Scenario_End --
+   ------------------
+
+   overriding procedure Scenario_End
+     (Self     : in out Feature_Runner;
+      Feature  : in out BDD.Features.Feature'Class;
+      Scenario : in out BDD.Features.Scenario'Class)
+   is
+   begin
+      if Scenario.Kind = Kind_Scenario then
+         if not Feature.Displayed then
+            Self.Format.Display_Feature (Feature);
+            Feature.Set_Displayed;
+         end if;
+
+         Self.Format.Display_Scenario (Feature, Scenario);
+
+         Self.Format.Scenario_Completed (Feature, Scenario);
+      end if;
+   end Scenario_End;
 
 end BDD.Runner;

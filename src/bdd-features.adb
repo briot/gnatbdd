@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
---                             g N A T C O L L                              --
+--                             G N A T C O L L                              --
 --                                                                          --
 --                     Copyright (C) 2014, AdaCore                          --
 --                                                                          --
@@ -32,7 +32,9 @@ package body BDD.Features is
    procedure Free (Self : in out Feature) is
    begin
       Self.File := No_File;
+      Self.Displayed := False;
       Free (Self.Name);
+      Self.Description := Null_Unbounded_String;
    end Free;
 
    --------------
@@ -76,14 +78,23 @@ package body BDD.Features is
       return Self.File;
    end File;
 
-   ---------
-   -- Add --
-   ---------
+   -------------------
+   -- Set_Displayed --
+   -------------------
 
-   procedure Add (Self : in out Feature; Scenar : Scenario'Class) is
+   procedure Set_Displayed (Self : in out Feature) is
    begin
-      Self.Scenarios.Append (Scenar);
-   end Add;
+      Self.Displayed := True;
+   end Set_Displayed;
+
+   ---------------
+   -- Displayed --
+   ---------------
+
+   function Displayed (Self : Feature) return Boolean is
+   begin
+      return Self.Displayed;
+   end Displayed;
 
    ----------
    -- Free --
@@ -91,18 +102,55 @@ package body BDD.Features is
 
    procedure Free (Self : in out Scenario) is
    begin
-      Self.Name    := Null_Unbounded_String;
-      Self.Line    := 1;
-      Self.Index   := 1;
-      Self.Outline := False;
+      Self.Name  := Null_Unbounded_String;
+      Self.Line  := 1;
+      Self.Index := 1;
+      Self.Kind  := Kind_Scenario;
    end Free;
 
-   --------------
-   -- Set_Name --
-   --------------
+   ----------
+   -- Name --
+   ----------
 
-   procedure Set_Name
+   function Name (Self : Scenario) return String is
+   begin
+      return To_String (Self.Name);
+   end Name;
+
+   ----------
+   -- Line --
+   ----------
+
+   function Line (Self : Scenario) return Positive is
+   begin
+      return Self.Line;
+   end Line;
+
+   -----------
+   -- Index --
+   -----------
+
+   function Index (Self : Scenario) return Positive is
+   begin
+      return Self.Index;
+   end Index;
+
+   ----------
+   -- Kind --
+   ----------
+
+   function Kind (Self : Scenario) return Scenario_Kind is
+   begin
+      return Self.Kind;
+   end Kind;
+
+   --------------------
+   -- Set_Attributes --
+   --------------------
+
+   procedure Set_Attributes
      (Self  : in out Scenario;
+      Kind  : Scenario_Kind;
       Name  : String;
       Line  : Positive;
       Index : Positive)
@@ -111,15 +159,26 @@ package body BDD.Features is
       Self.Name  := To_Unbounded_String (Trim (Name, Both));
       Self.Line  := Line;
       Self.Index := Index;
-   end Set_Name;
+      Self.Kind  := Kind;
+   end Set_Attributes;
 
-   --------------------
-   -- Set_Is_Outline --
-   --------------------
+   -----------------
+   -- Description --
+   -----------------
 
-   procedure Set_Is_Outline (Self : in out Scenario) is
+   function Description (Self : Feature) return String is
    begin
-      Self.Outline := True;
-   end Set_Is_Outline;
+      return To_String (Self.Description);
+   end Description;
+
+   ---------------------
+   -- Add_Description --
+   ---------------------
+
+   procedure Add_Description (Self : in out Feature; Descr : String) is
+   begin
+      --  Indent the description as it will be displayed
+      Append (Self.Description, "  " & Descr & ASCII.LF);
+   end Add_Description;
 
 end BDD.Features;

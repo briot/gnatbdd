@@ -24,21 +24,52 @@
 --  A parser for the features files
 
 with BDD.Features;     use BDD.Features;
-with GNATCOLL.VFS;     use GNATCOLL.VFS;
 
 package BDD.Parser is
 
    Syntax_Error : exception;
    --  Raised when reading one of the features file raises a syntax error.
 
+   type Abstract_Feature_Runner is interface;
+   --  The type that is responsible for running the features and scenarios
+   --  found by the parser.
+
+   procedure Feature_Start
+     (Self     : in out Abstract_Feature_Runner;
+      Feature  : in out BDD.Features.Feature'Class) is null;
+   --  Called on the first line of a feature.
+   --  At this stage, only the name and file or the feature are known, but none
+   --  of its scenarios
+
+   procedure Scenario_Start
+     (Self     : in out Abstract_Feature_Runner;
+      Feature  : in out BDD.Features.Feature'Class;
+      Scenario : in out BDD.Features.Scenario'Class) is null;
+   --  Called on the first line of a scenario.
+   --  At this stage, only the name and location of the scenario are known, but
+   --  none of its steps.
+
+   procedure Scenario_End
+     (Self     : in out Abstract_Feature_Runner;
+      Feature  : in out BDD.Features.Feature'Class;
+      Scenario : in out BDD.Features.Scenario'Class) is null;
+   --  Called when the last step in a scenario has been seen.
+
+   procedure Feature_End
+     (Self     : in out Abstract_Feature_Runner;
+      Feature  : in out BDD.Features.Feature'Class) is null;
+   --  Called when the last line of a feature has been seen.
+
    type Feature_Parser is tagged private;
 
    procedure Parse
      (Self     : Feature_Parser;
       File     : GNATCOLL.VFS.Virtual_File;
-      Callback : access procedure (F : BDD.Features.Feature));
+      Runner   : in out Abstract_Feature_Runner'Class);
    --  Parses a .feature file.
-   --  Calls Callback for each of the features found.
+   --
+   --  Calls Runner.Run_Scenario for each scenario found.
+   --
    --  Raises Syntax_Error when the file does not contain valid syntax.
 
 private

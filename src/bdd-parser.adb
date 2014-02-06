@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
---                             g N A T C O L L                              --
+--                             G N A T C O L L                              --
 --                                                                          --
 --                     Copyright (C) 2014, AdaCore                          --
 --                                                                          --
@@ -23,41 +23,30 @@
 
 with GNATCOLL.Traces;     use GNATCOLL.Traces;
 with GNATCOLL.Utils;      use GNATCOLL.Utils;
-with GNAT.Strings;        use GNAT.Strings;
 
 package body BDD.Parser is
    Me : constant Trace_Handle := Create ("BDD.PARSER");
-
-   Cst_Features         : constant String := "Feature:";
-   Cst_Scenario         : constant String := "Scenario:";
-   Cst_Scenario_Outline : constant String := "Scenario Outline:";
-   Cst_Given            : constant String := "Given";
-   Cst_And              : constant String := "And";
-   Cst_Then             : constant String := "Then";
-   Cst_But              : constant String := "But";
-   Cst_When             : constant String := "When";
-   Cst_Background       : constant String := "Background";
-   Cst_Examples         : constant String := "Examples:";
-   Cst_Scenarios        : constant String := "Scenarios:";
-   --  The keywords when parsing a file
 
    -----------
    -- Parse --
    -----------
 
    procedure Parse
-     (Self : Feature_Parser;
-      File : GNATCOLL.VFS.Virtual_File;
-      Callback : access procedure (F : BDD.Features.Feature))
+     (Self   : Feature_Parser;
+      File   : GNATCOLL.VFS.Virtual_File;
+      Runner : in out Abstract_Feature_Runner'Class)
    is
       pragma Unreferenced (Self);
 
-      type State_Type is (None, In_Feature, In_Scenario, In_String,
+      type State_Type is (None, In_Feature,
+                          In_Scenario,
+                          In_String,
                           In_Outline, In_Examples);
       State  : State_Type := None;
       F      : Feature;
       Scenar : Scenario;
       Buffer : GNAT.Strings.String_Access := File.Read_File;
+      Seen_Scenar : Boolean := False; --  Whether we have one scenario in F
       Index  : Integer := Buffer'First;
       Line   : Natural := 0;
       Index_In_Feature : Natural := 0;
@@ -70,6 +59,9 @@ package body BDD.Parser is
       procedure Finish_Feature;
       --  Called when the end of a scenario or a feature are seen
 
+      function Get_Line_End (After : Positive) return String;
+      --  Return the line text after the given character
+
       ---------------------
       -- Finish_Scenario --
       ---------------------
@@ -78,9 +70,10 @@ package body BDD.Parser is
       begin
          case State is
             when In_Scenario | In_Outline | In_Examples =>
-               F.Add (Scenar);
+               Runner.Scenario_End (F, Scenar);
                Free (Scenar);
                State := In_Feature;
+               Seen_Scenar := True;
 
             when others =>
                null;
@@ -95,11 +88,26 @@ package body BDD.Parser is
       begin
          Finish_Scenario;
          if State /= None then
-            Callback (F);
+            Runner.Feature_End (F);
             Free (F);
          end if;
+
          State := None;
+         Seen_Scenar := False;
       end Finish_Feature;
+
+      ------------------
+      -- Get_Line_End --
+      ------------------
+
+      function Get_Line_End (After : Positive) return String is
+      begin
+         if After <= Line_E then
+            return Buffer (After .. Line_E);
+         else
+            return "";
+         end if;
+      end Get_Line_End;
 
    begin
       Trace (Me, "Parsing " & File.Display_Full_Name);
@@ -180,6 +188,7 @@ package body BDD.Parser is
             Finish_Feature;
             F.Set_File (File);
             F.Set_Name (Buffer (First_Char + Cst_Features'Length .. Line_E));
+            Runner.Feature_Start (F);
             Index_In_Feature := 0;
             State := In_Feature;
 
@@ -190,11 +199,19 @@ package body BDD.Parser is
                  & Image (Line, 1);
             end if;
 
+            if Seen_Scenar then
+               raise Syntax_Error with "Background must be defined before all"
+                 & " Scenario, at " & File.Display_Full_Name & ":"
+                 & Image (Line, 1);
+            end if;
+
             Finish_Scenario;
-
-            --  ??? handle background
-            null;
-
+            Scenar.Set_Attributes
+              (Name  => Get_Line_End (First_Char + Cst_Background'Length),
+               Kind  => Kind_Background,
+               Line  => Line,
+               Index => Positive'Last);
+            Runner.Scenario_Start (F, Scenar);
             State := In_Scenario;
 
          elsif Starts_With (Buffer (First_Char .. Line_E), Cst_Scenario) then
@@ -206,10 +223,12 @@ package body BDD.Parser is
 
             Finish_Scenario;
             Index_In_Feature := Index_In_Feature + 1;
-            Scenar.Set_Name
-              (Name  => Buffer (First_Char + Cst_Scenario'Length .. Line_E),
+            Scenar.Set_Attributes
+              (Name  => Get_Line_End (First_Char + Cst_Scenario'Length),
+               Kind  => Kind_Scenario,
                Line  => Line,
                Index => Index_In_Feature);
+            Runner.Scenario_Start (F, Scenar);
             State := In_Scenario;
 
          elsif Starts_With (Buffer (First_Char .. Line_E),
@@ -223,11 +242,12 @@ package body BDD.Parser is
 
             Finish_Scenario;
             Index_In_Feature := Index_In_Feature + 1;
-            Scenar.Set_Is_Outline;
-            Scenar.Set_Name
-              (Name  => Buffer (First_Char + Cst_Scenario'Length .. Line_E),
+            Scenar.Set_Attributes
+              (Name => Get_Line_End (First_Char + Cst_Scenario_Outline'Length),
+               Kind  => Kind_Outline,
                Line  => Line,
                Index => Index_In_Feature);
+            Runner.Scenario_Start (F, Scenar);
             State := In_Outline;
 
          elsif Starts_With (Buffer (First_Char .. Line_E), Cst_Scenarios) then
@@ -270,14 +290,18 @@ package body BDD.Parser is
                  & Image (Line, 1);
 
             elsif State = In_Feature then
-               --  Ignored, these are the comments for the feature
-               null;
+               F.Add_Description (Buffer (First_Char .. Line_E));
 
             elsif State = In_Scenario
               or else State = In_Outline
             then
-               raise Syntax_Error with "Expected line starting with Given/And/"
-                 & "But/When/Then at " & File.Display_Full_Name & ":"
+               raise Syntax_Error with
+                 "Expected line starting with "
+                 & Cst_Given & "/"
+                 & Cst_When & "/"
+                 & Cst_Then & "/"
+                 & Cst_And & "/"
+                 & Cst_But & ", at " & File.Display_Full_Name & ":"
                  & Image (Line, 1);
             end if;
          end if;

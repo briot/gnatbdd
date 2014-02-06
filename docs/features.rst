@@ -220,6 +220,9 @@ feature above would be better written as::
        Scenario: Logging with invalid user account
           When I log in as "Henry"
           Then I should see the login page
+
+
+The background must be defined before any scenario.
     
 
 Scenario outlines

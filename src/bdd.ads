@@ -21,6 +21,29 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with GNAT.Strings;      use GNAT.Strings;
+with GNATCOLL.VFS;      use GNATCOLL.VFS;
+
 package BDD is
+
+   Cst_Features         : constant String := "Feature:";
+   Cst_Scenario         : constant String := "Scenario:";
+   Cst_Scenario_Outline : constant String := "Scenario Outline:";
+   Cst_Given            : constant String := "Given";
+   Cst_And              : constant String := "And";
+   Cst_Then             : constant String := "Then";
+   Cst_But              : constant String := "But";
+   Cst_When             : constant String := "When";
+   Cst_Background       : constant String := "Background";
+   Cst_Examples         : constant String := "Examples:";
+   Cst_Scenarios        : constant String := "Scenarios:";
+   --  The keywords when parsing a .feature file
+
+   Features_Directory : GNATCOLL.VFS.Virtual_File :=
+     Create_From_Base ("features");
+   --  The parent directory for all features file.
+
+   Features_File_Ext : GNAT.Strings.String_Access := new String'(".feature");
+   --  Extension for the features file
 
 end BDD;

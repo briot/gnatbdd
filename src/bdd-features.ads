@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
---                             g N A T C O L L                              --
+--                             G N A T C O L L                              --
 --                                                                          --
 --                     Copyright (C) 2014, AdaCore                          --
 --                                                                          --
@@ -23,10 +23,7 @@
 
 --  A feature and its scenarios.
 
-with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
-with GNAT.Strings;          use GNAT.Strings;
-with GNATCOLL.VFS;          use GNATCOLL.VFS;
 
 package BDD.Features is
 
@@ -40,17 +37,22 @@ package BDD.Features is
    procedure Free (Self : in out Scenario);
    --  Free the memory associated with Self
 
-   procedure Set_Name
+   type Scenario_Kind is (Kind_Scenario, Kind_Background, Kind_Outline);
+
+   procedure Set_Attributes
      (Self  : in out Scenario;
+      Kind  : Scenario_Kind;
       Name  : String;
       Line  : Positive;
       Index : Positive);
    --  Set the line of the feature file at which the scenario is defined, and
    --  its index within its Feature.
 
-   procedure Set_Is_Outline (Self : in out Scenario);
-   --  The scenario is in fact an outline, which will run itself multiple
-   --  times and use values from a table to generate each test.
+   function Name  (Self : Scenario) return String;
+   function Line  (Self : Scenario) return Positive;
+   function Index (Self : Scenario) return Positive;
+   function Kind  (Self : Scenario) return Scenario_Kind;
+   --  Retrieve the attributes of Self
 
    -------------
    -- Feature --
@@ -73,25 +75,32 @@ package BDD.Features is
    function File (Self : Feature) return GNATCOLL.VFS.Virtual_File;
    --  The file in which the feature is defined
 
-   procedure Add (Self : in out Feature; Scenar : Scenario'Class);
-   --  Add a copy of the scenario to the feature
+   procedure Set_Displayed (Self : in out Feature);
+   function Displayed (Self : Feature) return Boolean;
+   --  Whether the feature has already been displayed on the screen.
+   --  This is used when displaying the output, because some of the tests
+   --  could be filtered out, and we only want to display the feature info
+   --  when at least one scenario is run.
+
+   function Description (Self : Feature) return String;
+   procedure Add_Description (Self : in out Feature; Descr : String);
+   --  Add some description information. Add_Description will be called once
+   --  for each line in the description.
 
 private
    type Scenario is tagged record
       Name      : Ada.Strings.Unbounded.Unbounded_String;
       Line      : Positive := 1;
       Index     : Positive := 1;
-      Outline   : Boolean := False;
+      Kind      : Scenario_Kind := Kind_Scenario;
    end record;
    --  Make sure this type can be put in a list and automatically reclaim
    --  storage when the list is clearer.
 
-   package Scenario_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists
-     (Scenario'Class);
-
    type Feature is tagged limited record
-      File      : GNATCOLL.VFS.Virtual_File;
-      Name      : GNAT.Strings.String_Access;
-      Scenarios : Scenario_Lists.List;
+      File        : GNATCOLL.VFS.Virtual_File;
+      Name        : GNAT.Strings.String_Access;
+      Displayed   : Boolean := False;
+      Description : Ada.Strings.Unbounded.Unbounded_String;
    end record;
 end BDD.Features;

@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
---                             g N A T C O L L                              --
+--                             G N A T C O L L                              --
 --                                                                          --
 --                     Copyright (C) 2014, AdaCore                          --
 --                                                                          --
@@ -24,11 +24,12 @@
 --  Manipulating features files
 
 with BDD.Features;    use BDD.Features;
-with GNATCOLL.VFS;    use GNATCOLL.VFS;
+with BDD.Formatters;  use BDD.Formatters;
+with BDD.Parser;      use BDD.Parser;
 
 package BDD.Runner is
 
-   type Feature_Runner is tagged private;
+   type Feature_Runner is new BDD.Parser.Abstract_Feature_Runner with private;
    --  This type is responsible for running each of the features that are
    --  registered.
    --  You can either register features files explicitly, or by using the
@@ -49,14 +50,28 @@ package BDD.Runner is
       Files     : GNATCOLL.VFS.File_Array);
    --  Register one or more features file explicitly.
 
-   procedure For_Each
-     (Self      : in out Feature_Runner;
-      Callback  : access procedure (F : Feature));
-   --  Calls Callback for each of the registered features file.
+   procedure Run
+     (Self   : in out Feature_Runner;
+      Format : not null access BDD.Formatters.Formatter'Class;
+      Parser : BDD.Parser.Feature_Parser'Class);
+   --  Run all features and their scenarios.
+   --
+   --  Each of the features file is parsed through Parser. This allows you to
+   --  support various syntaxes for the files.
+   --
+   --  The features are run in alphabetical order of the file name, and the
+   --  scenarios are run in the order they were defined in in the features
+   --  file.
+
+   overriding procedure Scenario_End
+     (Self     : in out Feature_Runner;
+      Feature  : in out BDD.Features.Feature'Class;
+      Scenario : in out BDD.Features.Scenario'Class);
 
 private
-   type Feature_Runner is tagged record
-      Files : GNATCOLL.VFS.File_Array_Access;
+   type Feature_Runner is new BDD.Parser.Abstract_Feature_Runner with record
+      Files  : GNATCOLL.VFS.File_Array_Access;
+      Format : access BDD.Formatters.Formatter'Class;
    end record;
 
 end BDD.Runner;

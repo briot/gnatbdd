@@ -1,12 +1,22 @@
 with "gnatcoll";
 
 project GNATBDD is
-   for Main use ("gnattdd-main.adb", "driver.adb", "test_colors.adb");
+   for Main use ("main.adb", "driver.adb");
    for Languages use ("Ada", "C");
    for Source_Dirs use ("src");
    for Object_Dir use "obj";
 
    package Builder is
-      for Executable ("gnattdd-main.adb") use "gnattdd";
+      for Executable ("main.adb") use "gnattdd";
    end Builder;
+
+   package Compiler is
+      for Switches ("Ada") use ("-g", "-gnata", "-gnatVa", "-gnatQ",
+                                "-gnatyg0", "-gnatwaCJe", "-gnat2012",
+                                "-gnateE");
+   end Compiler;
+
+   package Binder is
+      for Switches ("Ada") use ("-E");
+   end Binder;
 end GNATBDD;

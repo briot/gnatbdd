@@ -66,11 +66,15 @@ There exist other similar software already.
   the testsuite of CRM, GNAT Tracker and bugtool for a while. This tool is
   very close to :program:`cucumber`, and uses a similar syntax for the test
   description files.
+
   It has several drawbacks, though: its implementation is 'experimental',
   and lacks documentation. Its output is sometimes confusing, and we made
   several iterations to make it usable, although it could be improved.
   This tool is not distributed outside of Sogilis and AdaCore, so it has not
   been extensively tested either.
+
+  It also lacks predefined regexps, step definitions, or even a full fledge
+  assertions library that would make it easier to write new steps.
 
 * :program:`Fitnesse` uses tests written in a Wiki, and directly highlights
   the web page to show passing and failing tests.

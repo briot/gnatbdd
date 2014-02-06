@@ -11,7 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import sys, os, time
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -39,9 +39,12 @@ source_suffix = '.rst'
 # The master toctree document.
 master_doc = 'index'
 
+def get_copyright():
+    return u'2013-%s, AdaCore' % time.strftime('%Y')
+
 # General information about the project.
-project = u'GNAT Test Driven Development'
-copyright = u'2014, AdaCore (c)'
+project = u'GNAT Behavior Driven Development'
+copyright = get_copyright()
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -91,7 +94,8 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinxdoc'
+html_style = 'adacore.css'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -110,7 +114,7 @@ html_theme = 'default'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'adacore_transparent.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -164,7 +168,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'GNATTestDrivenDevelopmentdoc'
+htmlhelp_basename = 'GNATbdd'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -183,7 +187,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'GNATTestDrivenDevelopment.tex', u'GNAT Test Driven Development Documentation',
+  ('index', 'gnatbdd.tex', u'GNAT Behavior Driven Development',
    u'AdaCore (c)', 'manual'),
 ]
 
@@ -213,7 +217,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'gnattestdrivendevelopment', u'GNAT Test Driven Development Documentation',
+    ('index', 'gnatbdd', u'GNAT Behavior Driven Development',
      [u'AdaCore (c)'], 1)
 ]
 
@@ -227,9 +231,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'GNATTestDrivenDevelopment', u'GNAT Test Driven Development Documentation',
-   u'AdaCore (c)', 'GNATTestDrivenDevelopment', 'One line description of project.',
-   'Miscellaneous'),
+  ('index', 'gnatbdd', u'GNAT Behavior Driven Development',
+   u'AdaCore (c)', 'GNATbdd', 'Behavior Driven Development.',
+   'Development'),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -245,10 +249,10 @@ texinfo_documents = [
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'GNAT Test Driven Development'
+epub_title = u'GNAT Behavior Driven Development'
 epub_author = u'AdaCore (c)'
 epub_publisher = u'AdaCore (c)'
-epub_copyright = u'2014, AdaCore (c)'
+epub_copyright = copyright
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

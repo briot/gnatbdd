@@ -1,4 +1,4 @@
-procedure GNATTDD.Main is
+procedure Main is
 
 begin
    --  This subprogram generates the test driver by including all the
@@ -6,4 +6,4 @@ begin
    --  steps, regular epressions and mockups.
 
    null;
-end GNATTDD.Main;
+end Main;

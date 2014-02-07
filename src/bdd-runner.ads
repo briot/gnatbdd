@@ -63,10 +63,6 @@ package BDD.Runner is
    --  scenarios are run in the order they were defined in in the features
    --  file.
 
-   overriding procedure Scenario_Start
-     (Self     : in out Feature_Runner;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class);
    overriding procedure Scenario_End
      (Self     : in out Feature_Runner;
       Feature  : not null access BDD.Features.Feature_Record'Class;

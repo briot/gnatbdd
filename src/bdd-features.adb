@@ -205,6 +205,38 @@ package body BDD.Features is
       Self.Steps.Append (S);
    end Add;
 
+   ------------------
+   -- Foreach_Step --
+   ------------------
+
+   procedure Foreach_Step
+     (Self : not null access Scenario_Record;
+      Callback : not null access procedure
+        (S : not null access Step_Record'Class))
+   is
+   begin
+      for S of Self.Steps loop
+         Callback (S);
+      end loop;
+   end Foreach_Step;
+
+   -------------------
+   -- Longuest_Step --
+   -------------------
+
+   function Longuest_Step
+     (Self : not null access Scenario_Record) return Natural is
+   begin
+      if Self.Longuest_Step = -1 then
+         Self.Longuest_Step := Length (Self.Name) + Cst_Scenario'Length + 1;
+         for S of Self.Steps loop
+            Self.Longuest_Step := Integer'Max
+              (Self.Longuest_Step, Length (S.Text));
+         end loop;
+      end if;
+      return Self.Longuest_Step;
+   end Longuest_Step;
+
    --------------------
    -- Set_Attributes --
    --------------------
@@ -243,16 +275,57 @@ package body BDD.Features is
       Append (Self.Description, "  " & Descr & ASCII.LF);
    end Add_To_Description;
 
-   --------------
-   -- Set_Text --
-   --------------
+   ------------
+   -- Create --
+   ------------
 
-   procedure Set_Text
-     (Self : not null access Step_Record'Class; Text : String)
+   function Create
+     (Text : String; Line : Positive) return not null access Step_Record
    is
+      Self : constant Step := new Step_Record;
    begin
-      Append (Self.Text, Text);
-   end Set_Text;
+      Self.Text   := To_Unbounded_String (Text);
+      Self.Line   := Line;
+      Self.Status := Status_Undefined;
+      return Self;
+   end Create;
+
+   ----------------------
+   -- Add_To_Multiline --
+   ----------------------
+
+   procedure Add_To_Multiline
+     (Self : not null access Step_Record'Class; Text : String) is
+   begin
+      Append (Self.Multiline, Text & ASCII.LF);
+   end Add_To_Multiline;
+
+   ----------
+   -- Line --
+   ----------
+
+   function Line (Self : not null access Step_Record) return Positive is
+   begin
+      return Self.Line;
+   end Line;
+
+   ----------
+   -- Text --
+   ----------
+
+   function Text (Self : not null access Step_Record) return String is
+   begin
+      return To_String (Self.Text);
+   end Text;
+
+   ---------------
+   -- Multiline --
+   ---------------
+
+   function Multiline (Self : not null access Step_Record) return String is
+   begin
+      return To_String (Self.Multiline);
+   end Multiline;
 
    ----------
    -- Free --
@@ -260,7 +333,9 @@ package body BDD.Features is
 
    procedure Free (Self : in out Step_Record) is
    begin
-      Self.Text := Null_Unbounded_String;
+      Self.Text      := Null_Unbounded_String;
+      Self.Multiline := Null_Unbounded_String;
+      Self.Line      := 1;
    end Free;
 
    ----------
@@ -289,5 +364,27 @@ package body BDD.Features is
 
       Step_Lists.Clear (Step_Lists.List (List));  --  inherited
    end Clear;
+
+   ----------------
+   -- Set_Status --
+   ----------------
+
+   procedure Set_Status
+     (Self   : not null access Step_Record;
+      Status : BDD.Scenario_Status)
+   is
+   begin
+      Self.Status := Status;
+   end Set_Status;
+
+   ------------
+   -- Status --
+   ------------
+
+   function Status
+     (Self   : not null access Step_Record) return BDD.Scenario_Status is
+   begin
+      return Self.Status;
+   end Status;
 
 end BDD.Features;

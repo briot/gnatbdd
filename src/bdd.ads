@@ -65,6 +65,13 @@ package BDD is
       Status_Undefined,
       Status_Skipped);
 
+   Step_Colors : array (Scenario_Status) of GNATCOLL.Terminal.ANSI_Color :=
+     (Status_Passed    => GNATCOLL.Terminal.Green,
+      Status_Failed    => GNATCOLL.Terminal.Red,
+      Status_Undefined => GNATCOLL.Terminal.Yellow,
+      Status_Skipped   => GNATCOLL.Terminal.Cyan);
+   --  Mapping status to colors in the output
+
    procedure Command_Line_Switches;
    --  Handles the command line switches
 

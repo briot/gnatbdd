@@ -35,13 +35,32 @@ package BDD.Features is
    type Step_Record (<>) is tagged private;
    type Step is access all Step_Record'Class;
 
-   procedure Set_Text
+   function Create
+     (Text : String; Line : Positive) return not null access Step_Record;
+   --  Create a new step.
+   --  The line references the file contain the feature in which the step is
+   --  found.
+
+   procedure Add_To_Multiline
      (Self : not null access Step_Record'Class; Text : String);
-   --  Set the text of the step
+   --  Add some contents to the final multi-line string.
+   --  Text is always added a ASCII.LF
 
    procedure Free (Self : in out Step_Record);
    procedure Free (Self : in out Step);
    --  Free the memory associated with Self
+
+   function Line (Self : not null access Step_Record) return Positive;
+   function Text (Self : not null access Step_Record) return String;
+   function Multiline (Self : not null access Step_Record) return String;
+   --  Return the components of the step
+
+   procedure Set_Status
+     (Self   : not null access Step_Record;
+      Status : BDD.Scenario_Status);
+   function Status
+     (Self   : not null access Step_Record) return BDD.Scenario_Status;
+   --  Set the status for a specific step
 
    --------------
    -- Scenario --
@@ -77,6 +96,16 @@ package BDD.Features is
      (Self : not null access Scenario_Record;
       S    : not null access Step_Record'Class);
    --  Add a new step
+
+   procedure Foreach_Step
+     (Self : not null access Scenario_Record;
+      Callback : not null access procedure
+        (S : not null access Step_Record'Class));
+   --  Iterate over each step
+
+   function Longuest_Step
+     (Self : not null access Scenario_Record) return Natural;
+   --  The length of the longuest step (for display purposes)
 
    -------------
    -- Feature --
@@ -119,7 +148,10 @@ package BDD.Features is
 
 private
    type Step_Record is tagged record
+      Line      : Positive;
       Text      : Ada.Strings.Unbounded.Unbounded_String;
+      Multiline : Ada.Strings.Unbounded.Unbounded_String;
+      Status    : BDD.Scenario_Status;
    end record;
 
    package Step_Lists is new Ada.Containers.Doubly_Linked_Lists (Step);
@@ -132,6 +164,8 @@ private
       Index     : Positive := 1;
       Kind      : Scenario_Kind := Kind_Scenario;
       Steps     : Step_List;
+
+      Longuest_Step : Integer := -1;
    end record;
    --  Make sure this type can be put in a list and automatically reclaim
    --  storage when the list is clearer.

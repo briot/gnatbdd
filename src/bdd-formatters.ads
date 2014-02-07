@@ -50,6 +50,14 @@ package BDD.Formatters is
       Status   : BDD.Scenario_Status) is null;
    --  Called when a scenario has completed
 
+   procedure Step_Completed
+     (Self     : in out Formatter;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
+      Scenario : not null access BDD.Features.Scenario_Record'Class;
+      Step     : not null access BDD.Features.Step_Record'Class) is null;
+   --  Called when a step has completed.
+   --  Step.Status has been set appropriately
+
    function Create_Formatter return not null access Formatter'Class;
    --  Create the formatter to use, depending on BDD.Output
 
@@ -70,6 +78,11 @@ package BDD.Formatters is
       Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class;
       Status   : BDD.Scenario_Status);
+   overriding procedure Step_Completed
+     (Self     : in out Formatter_Full;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
+      Scenario : not null access BDD.Features.Scenario_Record'Class;
+      Step     : not null access BDD.Features.Step_Record'Class);
 
    ----------
    -- Dots --

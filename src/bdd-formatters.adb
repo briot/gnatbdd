@@ -26,6 +26,10 @@ with GNATCOLL.Utils; use GNATCOLL.Utils;
 
 package body BDD.Formatters is
 
+   Scenario_Indent : constant String := "  ";
+   Step_Indent     : constant String := "    ";
+   --  Visual indentation in the display
+
    function Scenario_Name
      (Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
@@ -36,7 +40,12 @@ package body BDD.Formatters is
      (Self     : Formatter'Class;
       Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class);
-   --  Display location information for the scenario
+   procedure Display_Location
+     (Self     : Formatter'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
+      Step     : not null access BDD.Features.Step_Record'Class;
+      Extra    : String := "");
+   --  Display location information for the scenario or the step
 
    procedure Display_Scenario_Header
      (Self     : in out Formatter'Class;
@@ -44,12 +53,32 @@ package body BDD.Formatters is
       Scenario : not null access BDD.Features.Scenario_Record'Class);
    --  Display the feature and scenario headers, as needed.
 
+   procedure Display_Scenario_And_Steps
+     (Self     : in out Formatter_Hide_Passed;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
+      Scenario : not null access BDD.Features.Scenario_Record'Class);
+   --  Display a scenario and all its steps
+
+   procedure Display_Step
+     (Self     : in out Formatter'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
+      Scenario : not null access BDD.Features.Scenario_Record'Class;
+      Step     : not null access BDD.Features.Step_Record'Class);
+   --  Display the text for a specific step
+
    procedure Display_Progress
      (Self     : in out Formatter'Class;
       Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class);
    --  Display the name of the scenario being run, if supported by the
    --  terminal
+
+   procedure Put_And_Align
+     (Scenario : not null access BDD.Features.Scenario_Record'Class;
+      Text     : String);
+   --  Display text (assuming at the beginning of a line), and adds trailing
+   --  spaces so that the cursor is left aligned at a column suitable for
+   --  displaying the location.
 
    procedure Clear_Progress (Self : in out Formatter'Class);
    --  Clear progress indicator if needed.
@@ -81,6 +110,30 @@ package body BDD.Formatters is
         & ":" & Image (Scenario.Line, 1);
    end Scenario_Name;
 
+   --------------------------------
+   -- Display_Scenario_And_Steps --
+   --------------------------------
+
+   procedure Display_Scenario_And_Steps
+     (Self     : in out Formatter_Hide_Passed;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
+      Scenario : not null access BDD.Features.Scenario_Record'Class)
+   is
+      procedure Show_Step
+        (Step : not null access BDD.Features.Step_Record'Class);
+      --  Display a step for a scenario
+
+      procedure Show_Step
+        (Step : not null access BDD.Features.Step_Record'Class) is
+      begin
+         Display_Step (Self, Feature, Scenario, Step);
+      end Show_Step;
+   begin
+      Display_Scenario_Header (Self, Feature, Scenario);
+      Scenario.Foreach_Step (Show_Step'Access);
+      New_Line;
+   end Display_Scenario_And_Steps;
+
    ----------------------
    -- Display_Location --
    ----------------------
@@ -100,6 +153,44 @@ package body BDD.Formatters is
          Style      => Reset_All);
       New_Line;
    end Display_Location;
+
+   ----------------------
+   -- Display_Location --
+   ----------------------
+
+   procedure Display_Location
+     (Self     : Formatter'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
+      Step     : not null access BDD.Features.Step_Record'Class;
+      Extra    : String := "")
+   is
+   begin
+      Self.Term.Set_Color
+        (Term       => Ada.Text_IO.Standard_Output,
+         Foreground => Grey);
+      Put ("# "
+           & Extra
+           & (+Feature.File.Relative_Path (Features_Directory))
+           & ":" & Image (Step.Line, 1));
+      Self.Term.Set_Color
+        (Term       => Ada.Text_IO.Standard_Output,
+         Style      => Reset_All);
+      New_Line;
+   end Display_Location;
+
+   -------------------
+   -- Put_And_Align --
+   -------------------
+
+   procedure Put_And_Align
+     (Scenario : not null access BDD.Features.Scenario_Record'Class;
+      Text     : String)
+   is
+      Long : constant Natural := Scenario.Longuest_Step + Step_Indent'Length;
+   begin
+      Put (Text);
+      Put ((1 .. 1 + Long - Text'Length => ' '));
+   end Put_And_Align;
 
    ----------------------
    -- Display_Progress --
@@ -164,9 +255,46 @@ package body BDD.Formatters is
          Self.Last_Displayed_Feature_Id := Feature.Id;
       end if;
 
-      Put ("  " & Cst_Scenario & ' ' & Scenario.Name & "  ");
+      Put_And_Align
+        (Scenario, Scenario_Indent & Cst_Scenario & ' ' & Scenario.Name);
       Display_Location (Self, Feature, Scenario);
    end Display_Scenario_Header;
+
+   ------------------
+   -- Display_Step --
+   ------------------
+
+   procedure Display_Step
+     (Self     : in out Formatter'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
+      Scenario : not null access BDD.Features.Scenario_Record'Class;
+      Step     : not null access BDD.Features.Step_Record'Class)
+   is
+   begin
+      Self.Term.Set_Color
+        (Term       => Ada.Text_IO.Standard_Output,
+         Foreground => BDD.Step_Colors (Step.Status));
+      Put_And_Align (Scenario, Step_Indent & Step.Text);
+
+      if Self.Term.Has_Colors then
+         Self.Term.Set_Color
+           (Term       => Ada.Text_IO.Standard_Output,
+            Style      => Reset_All);
+         Display_Location (Self, Feature, Step);
+      else
+         case Step.Status is
+            when Status_Passed    =>
+               Display_Location (Self, Feature, Step, "[OK] ");
+            when Status_Failed    =>
+               Display_Location (Self, Feature, Step, "[FAILED] ");
+            when Status_Undefined =>
+               Display_Location (Self, Feature, Step, "[UNDEFINED] ");
+            when Status_Skipped   =>
+               Display_Location (Self, Feature, Step, "[SKIPPED] ");
+         end case;
+      end if;
+
+   end Display_Step;
 
    --------------------
    -- Scenario_Start --
@@ -199,6 +327,19 @@ package body BDD.Formatters is
       New_Line;
    end Scenario_Completed;
 
+   --------------------
+   -- Step_Completed --
+   --------------------
+
+   overriding procedure Step_Completed
+     (Self     : in out Formatter_Full;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
+      Scenario : not null access BDD.Features.Scenario_Record'Class;
+      Step     : not null access BDD.Features.Step_Record'Class) is
+   begin
+      Display_Step (Self, Feature, Scenario, Step);
+   end Step_Completed;
+
    ------------------------
    -- Scenario_Completed --
    ------------------------
@@ -209,18 +350,22 @@ package body BDD.Formatters is
       Scenario : not null access BDD.Features.Scenario_Record'Class;
       Status   : BDD.Scenario_Status)
    is
-      pragma Unreferenced (Self, Feature, Scenario);
+      pragma Unreferenced (Feature, Scenario);
    begin
+      Self.Term.Set_Color
+        (Term       => Ada.Text_IO.Standard_Output,
+         Foreground => BDD.Step_Colors (Status));
+
       case Status is
-         when Status_Passed =>
-            Put (".");
-         when Status_Failed =>
-            Put ("F");
-         when Status_Undefined =>
-            Put ("U");
-         when Status_Skipped =>
-            Put ("-");
+         when Status_Passed    => Put (".");
+         when Status_Failed    => Put ("F");
+         when Status_Undefined => Put ("U");
+         when Status_Skipped   => Put ("-");
       end case;
+
+      Self.Term.Set_Color
+        (Term       => Ada.Text_IO.Standard_Output,
+         Style      => Reset_All);
    end Scenario_Completed;
 
    --------------------
@@ -281,8 +426,7 @@ package body BDD.Formatters is
 
          when Status_Failed | Status_Undefined =>
             Clear_Progress (Self);
-            Display_Scenario_Header (Self, Feature, Scenario);
-            New_Line;
+            Display_Scenario_And_Steps (Self, Feature, Scenario);
       end case;
    end Scenario_Completed;
 

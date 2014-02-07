@@ -42,10 +42,10 @@ package body BDD.Parser is
                           In_String,
                           In_Outline, In_Examples);
       State  : State_Type := None;
-      F      : Feature;
-      Scenar : Scenario;
+      F      : BDD.Features.Feature;
+      Scenar : BDD.Features.Scenario;
+      Step   : BDD.Features.Step;
       Buffer : GNAT.Strings.String_Access := File.Read_File;
-      Seen_Scenar : Boolean := False; --  Whether we have one scenario in F
       Index  : Integer := Buffer'First;
       Line   : Natural := 0;
       Index_In_Feature : Natural := 0;
@@ -69,10 +69,10 @@ package body BDD.Parser is
       begin
          case State is
             when In_Scenario | In_Outline | In_Examples =>
+               Step := null;
                Runner.Scenario_End (F, Scenar);
                Free (Scenar);
                State := In_Feature;
-               Seen_Scenar := True;
 
             when others =>
                null;
@@ -92,7 +92,6 @@ package body BDD.Parser is
          end if;
 
          State := None;
-         Seen_Scenar := False;
       end Finish_Feature;
 
       ------------------
@@ -136,7 +135,7 @@ package body BDD.Parser is
          if Starts_With (Buffer (First_Char .. Line_E), """""""") then
             if State = In_String then
                State := In_Scenario;
-            elsif State = In_Scenario then
+            elsif Step /= null then
                State := In_String;
                String_Indent := First_Char - Line_S;
                String_Line_Start := Line;
@@ -148,13 +147,12 @@ package body BDD.Parser is
 
          elsif State = In_String then
             if First_Char  < Line_S + String_Indent - 1 then
-               Trace (Me, "MANU String="
-                      & Buffer (First_Char .. Line_E));
+               Step.Add_To_Multiline (Buffer (First_Char .. Line_E));
             elsif Line_S + String_Indent - 1 <= Line_E then
-               Trace (Me, "MANU String="
-                      & Buffer (Line_S + String_Indent - 1 .. Line_E));
+               Step.Add_To_Multiline
+                 (Get_Line_End (Line_S + String_Indent - 1));
             else
-               Trace (Me, "MANU String=");
+               Step.Add_To_Multiline ("");
             end if;
 
          elsif First_Char > Line_E then
@@ -164,7 +162,13 @@ package body BDD.Parser is
          elsif Buffer (First_Char) = '|' then
             case State is
                when In_Scenario | In_Outline =>
-                  Trace (Me, "MANU Table=" & Buffer (First_Char .. Line_E));
+                  if Step /= null then
+                     Trace (Me, "MANU Table=" & Buffer (First_Char .. Line_E));
+                  else
+                     raise Syntax_Error with "Tables only allowed in"
+                       & " steps, at " & File.Display_Full_Name & ":"
+                       & Image (Line, 1);
+                  end if;
 
                when In_Examples =>
                   Trace (Me, "MANU Example=" & Buffer (First_Char .. Line_E));
@@ -200,7 +204,7 @@ package body BDD.Parser is
                  & Image (Line, 1);
             end if;
 
-            if Seen_Scenar then
+            if Scenar /= null then
                raise Syntax_Error with "Background must be defined before all"
                  & " Scenario, at " & File.Display_Full_Name & ":"
                  & Image (Line, 1);
@@ -279,16 +283,16 @@ package body BDD.Parser is
            or else Starts_With (Buffer (First_Char .. Line_E), Cst_But)
            or else Starts_With (Buffer (First_Char .. Line_E), Cst_When)
          then
-            if State /= In_Scenario
-              and then State /= In_Outline
-            then
+            if Scenar = null then
                raise Syntax_Error with "Step must be defined with in a"
                  & " Scenario at " & File.Display_Full_Name & ":"
                  & Image (Line, 1);
             end if;
 
-            --  ??? Should handle the step
-            null;
+            Step := Create
+              (Text => Buffer (First_Char .. Line_E),
+               Line => Line);
+            Scenar.Add (Step);
 
          else
             if State = None then

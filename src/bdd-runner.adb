@@ -97,21 +97,6 @@ package body BDD.Runner is
       end if;
    end Run;
 
-   --------------------
-   -- Scenario_Start --
-   --------------------
-
-   overriding procedure Scenario_Start
-     (Self     : in out Feature_Runner;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class)
-   is
-   begin
-      if Scenario.Kind = Kind_Scenario then
-         Self.Format.Scenario_Start (Feature, Scenario);
-      end if;
-   end Scenario_Start;
-
    ------------------
    -- Scenario_End --
    ------------------
@@ -121,13 +106,31 @@ package body BDD.Runner is
       Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
    is
-      Status : Scenario_Status;
+      Status : Scenario_Status := Status_Passed;
+
+      procedure Run_Step (S : not null access Step_Record'Class);
+      --  Run a specific step of the scenario
+
+      procedure Run_Step (S : not null access Step_Record'Class) is
+      begin
+         case Status is
+            when Status_Passed =>
+               --  ??? Simulate a run
+               delay 0.2;
+               S.Set_Status (Status_Undefined);
+               Status := Status_Undefined;
+
+            when Status_Failed | Status_Skipped | Status_Undefined =>
+               S.Set_Status (Status_Skipped);
+         end case;
+
+         Self.Format.Step_Completed (Feature, Scenario, S);
+      end Run_Step;
+
    begin
       if Scenario.Kind = Kind_Scenario then
-         Status := Status_Failed;
-
-         delay 1.0;
-
+         Self.Format.Scenario_Start (Feature, Scenario);
+         Scenario.Foreach_Step (Run_Step'Access);
          Self.Format.Scenario_Completed (Feature, Scenario, Status);
       end if;
    end Scenario_End;

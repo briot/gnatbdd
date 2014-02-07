@@ -21,6 +21,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+--  This package provides support for manipulating, comparing and displaying
+--  tables.
+
 with Ada.Containers.Indefinite_Vectors;
 with Ada.Containers.Vectors;
 with Ada.Text_IO;          use Ada.Text_IO;

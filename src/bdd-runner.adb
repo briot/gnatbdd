@@ -21,6 +21,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Exceptions; use Ada.Exceptions;
+with BDD.Steps;      use BDD.Steps;
+
 package body BDD.Runner is
 
    --------------
@@ -144,23 +147,29 @@ package body BDD.Runner is
 
       procedure Run_Step
         (Scenario : BDD.Features.Scenario;
-         Step     : not null access Step_Record'Class) is
+         Step     : not null access Step_Record'Class)
+      is
+         Status : Scenario_Status;
       begin
          case Scenario.Status is
             when Status_Passed =>
-               --  ??? Simulate a run
-               --  delay 0.2;
-               if Step.Line >= 25 and then Step.Line <= 26 then
-                  Step.Set_Status (Status_Passed);
-               elsif Step.Line = 47 then
-                  Step.Set_Status (Status_Failed);
-               elsif Step.Line = 13 then
-                  Step.Set_Status (Status_Undefined);
-               elsif Step.Line = 7 then
-                  Step.Set_Status (Status_Passed);
-               else
-                  Step.Set_Status (Status_Passed);
-               end if;
+               Step.Set_Status (Status_Passed);
+
+               begin
+                  Status := BDD.Steps.Run_Step (Step.Text);
+
+--                    if Status = Status_Undefined then
+--                       --  ??? Could run some predefined steps here
+--                       null;
+--                    end if;
+
+                  Step.Set_Status (Status);
+
+               exception
+                  when E : others =>
+                     Step.Set_Status
+                       (Status_Failed, Exception_Information (E));
+               end;
 
                if Show_Steps then
                   Self.Steps_Stats (Step.Status) :=

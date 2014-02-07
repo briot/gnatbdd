@@ -259,6 +259,25 @@ package body BDD.Formatters is
       Scenario : BDD.Features.Scenario;
       Step     : not null access BDD.Features.Step_Record'Class)
    is
+      procedure Indent (Text : String);
+      --  Display text on multiple lines, and indent each line as needed
+
+      procedure Indent (Text : String) is
+         Start, Last : Integer;
+      begin
+         Start := Text'First;
+         while Start <= Text'Last loop
+            Last := Line_End (Text, Start);
+            if Last < Start then  --  empty line
+               New_Line;
+               Start := Last + 2;
+            else
+               Put ("      " & Text (Start .. Last));
+               Start := Last + 1;
+            end if;
+         end loop;
+      end Indent;
+
    begin
       Self.Term.Set_Color
         (Term       => Ada.Text_IO.Standard_Output,
@@ -282,35 +301,33 @@ package body BDD.Formatters is
 
       declare
          Multi : constant String := Step.Multiline;
-         Start, Last : Integer;
       begin
          if Multi /= "" then
             Self.Term.Set_Color
               (Term       => Ada.Text_IO.Standard_Output,
                Foreground => BDD.Step_Colors (Step.Status));
             Put_Line ("      """"""");
-
-            Start := Multi'First;
-            while Start <= Multi'Last loop
-               Last := Line_End (Multi, Start);
-               if Last < Start then  --  empty line
-                  New_Line;
-                  Start := Last + 2;
-               else
-                  Put ("      " & Multi (Start .. Last));
-                  Start := Last + 1;
-               end if;
-            end loop;
-
+            Indent (Multi);
             Put_Line ("      """"""");
          end if;
+      end;
 
-         if Step.Table /= No_Table then
+      if Step.Table /= No_Table then
+         Self.Term.Set_Color
+           (Term       => Ada.Text_IO.Standard_Output,
+            Foreground => BDD.Step_Colors (Step.Status));
+         Step.Table.Display
+           (Ada.Text_IO.Standard_Output, Prefix => "      ");
+      end if;
+
+      declare
+         Msg : constant String := Step.Error_Msg;
+      begin
+         if Msg /= "" then
             Self.Term.Set_Color
               (Term       => Ada.Text_IO.Standard_Output,
                Foreground => BDD.Step_Colors (Step.Status));
-            Step.Table.Display
-              (Ada.Text_IO.Standard_Output, Prefix => "      ");
+            Indent (Msg);
          end if;
       end;
 

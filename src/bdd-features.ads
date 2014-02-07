@@ -60,10 +60,12 @@ package BDD.Features is
    --  Return the components of the step
 
    procedure Set_Status
-     (Self   : not null access Step_Record;
-      Status : BDD.Scenario_Status);
+     (Self      : not null access Step_Record;
+      Status    : BDD.Scenario_Status;
+      Error_Msg : String := "");
    function Status
      (Self   : not null access Step_Record) return BDD.Scenario_Status;
+   function Error_Msg (Self : not null access Step_Record) return String;
    --  Set the status for a specific step
 
    -------------
@@ -149,6 +151,7 @@ private
       Line      : Positive;
       Text      : Ada.Strings.Unbounded.Unbounded_String;
       Multiline : Ada.Strings.Unbounded.Unbounded_String;
+      Error_Msg : Ada.Strings.Unbounded.Unbounded_String;
       Status    : BDD.Scenario_Status;
       Table     : BDD.Tables.Table;
    end record;

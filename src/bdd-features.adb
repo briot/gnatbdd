@@ -378,12 +378,23 @@ package body BDD.Features is
    ----------------
 
    procedure Set_Status
-     (Self   : not null access Step_Record;
-      Status : BDD.Scenario_Status)
+     (Self      : not null access Step_Record;
+      Status    : BDD.Scenario_Status;
+      Error_Msg : String := "")
    is
    begin
       Self.Status := Status;
+      Self.Error_Msg := To_Unbounded_String (Error_Msg);
    end Set_Status;
+
+   ---------------
+   -- Error_Msg --
+   ---------------
+
+   function Error_Msg (Self : not null access Step_Record) return String is
+   begin
+      return To_String (Self.Error_Msg);
+   end Error_Msg;
 
    ------------
    -- Status --

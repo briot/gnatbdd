@@ -137,7 +137,7 @@ package body BDD.Parser is
                State := In_Scenario;
             elsif Step /= null then
                State := In_String;
-               String_Indent := First_Char - Line_S;
+               String_Indent := First_Char - Line_S + 1;
                String_Line_Start := Line;
             else
                raise Syntax_Error with "Multi-line strings only allowed in"

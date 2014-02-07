@@ -65,7 +65,7 @@ with the first general layout for a file::
 
 There could be several **scenarios** within the **feature**. In fact, there
 could also be several features in a given file, but this is not recommended in
-general.
+general (this is an extension of the format used by cucumber).
 
 The scenario is split into several **steps**, each of which start on a separate
 line. The steps are introduced by one of severaal keywords, all shown in bold

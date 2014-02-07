@@ -261,9 +261,6 @@ package body BDD.Formatters is
       Put_And_Align (Scenario, Step_Indent & Step.Text);
 
       if Self.Term.Has_Colors then
-         Self.Term.Set_Color
-           (Term       => Ada.Text_IO.Standard_Output,
-            Style      => Reset_All);
          Display_Location (Self, Scenario, Step);
       else
          case Step.Status is
@@ -277,6 +274,36 @@ package body BDD.Formatters is
                Display_Location (Self, Scenario, Step, "[SKIPPED] ");
          end case;
       end if;
+
+      declare
+         Multi : constant String := Step.Multiline;
+         Start, Last : Integer;
+      begin
+         if Multi /= "" then
+            Self.Term.Set_Color
+              (Term       => Ada.Text_IO.Standard_Output,
+               Foreground => BDD.Step_Colors (Step.Status));
+            Put_Line ("      """"""");
+
+            Start := Multi'First;
+            while Start <= Multi'Last loop
+               Last := Line_End (Multi, Start);
+               if Last < Start then  --  empty line
+                  New_Line;
+                  Start := Last + 2;
+               else
+                  Put ("      " & Multi (Start .. Last));
+                  Start := Last + 1;
+               end if;
+            end loop;
+
+            Put_Line ("      """"""");
+         end if;
+      end;
+
+      Self.Term.Set_Color
+        (Term       => Ada.Text_IO.Standard_Output,
+         Style      => Reset_All);
    end Display_Step;
 
    ----------------------------

@@ -147,6 +147,7 @@ package body BDD is
       Format.Init (Term);
 
       Features.Run (Format, Parser);
+      Format.All_Features_Completed;
 
    exception
       when GNAT.Command_Line.Exit_From_Command_Line

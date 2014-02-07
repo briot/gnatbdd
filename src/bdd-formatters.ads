@@ -23,6 +23,7 @@
 
 --  The formatters are used to display output for the user
 
+private with Ada.Containers.Doubly_Linked_Lists;
 with BDD.Features;      use BDD.Features;
 with GNATCOLL.Terminal; use GNATCOLL.Terminal;
 
@@ -38,25 +39,26 @@ package BDD.Formatters is
 
    procedure Scenario_Start
      (Self     : in out Formatter;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class) is null;
+      Scenario : BDD.Features.Scenario) is null;
    --  Display information about a feature and ascenario just before the
    --  scenario is run.
 
    procedure Scenario_Completed
      (Self     : in out Formatter;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class;
-      Status   : BDD.Scenario_Status) is null;
-   --  Called when a scenario has completed
+      Scenario : BDD.Features.Scenario) is null;
+   --  Called when a scenario has completed.
+   --  Its status has already been set
 
    procedure Step_Completed
      (Self     : in out Formatter;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class;
+      Scenario : BDD.Features.Scenario;
       Step     : not null access BDD.Features.Step_Record'Class) is null;
    --  Called when a step has completed.
    --  Step.Status has been set appropriately
+
+   procedure All_Features_Completed (Self : in out Formatter) is null;
+   --  Called when all features have been full run.
+   --  This can be used to display summaries
 
    function Create_Formatter return not null access Formatter'Class;
    --  Create the formatter to use, depending on BDD.Output
@@ -71,17 +73,13 @@ package BDD.Formatters is
 
    overriding procedure Scenario_Start
      (Self     : in out Formatter_Full;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class);
+      Scenario : BDD.Features.Scenario);
    overriding procedure Scenario_Completed
      (Self     : in out Formatter_Full;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class;
-      Status   : BDD.Scenario_Status);
+      Scenario : BDD.Features.Scenario);
    overriding procedure Step_Completed
      (Self     : in out Formatter_Full;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class;
+      Scenario : BDD.Features.Scenario;
       Step     : not null access BDD.Features.Step_Record'Class);
 
    ----------
@@ -92,9 +90,8 @@ package BDD.Formatters is
 
    overriding procedure Scenario_Completed
      (Self     : in out Formatter_Dots;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class;
-      Status   : BDD.Scenario_Status);
+      Scenario : BDD.Features.Scenario);
+   overriding procedure All_Features_Completed (Self : in out Formatter_Dots);
 
    -----------
    -- Quiet --
@@ -104,13 +101,10 @@ package BDD.Formatters is
 
    overriding procedure Scenario_Start
      (Self     : in out Formatter_Quiet;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class);
+      Scenario : BDD.Features.Scenario);
    overriding procedure Scenario_Completed
      (Self     : in out Formatter_Quiet;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class;
-      Status   : BDD.Scenario_Status);
+      Scenario : BDD.Features.Scenario);
 
    -----------------
    -- Hide_Passed --
@@ -120,24 +114,28 @@ package BDD.Formatters is
 
    overriding procedure Scenario_Start
      (Self     : in out Formatter_Hide_Passed;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class);
+      Scenario : BDD.Features.Scenario);
    overriding procedure Scenario_Completed
      (Self     : in out Formatter_Hide_Passed;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class;
-      Status   : BDD.Scenario_Status);
+      Scenario : BDD.Features.Scenario);
 
 private
+   package Scenario_Lists is new Ada.Containers.Doubly_Linked_Lists
+     (BDD.Features.Scenario);
+
    type Formatter is abstract tagged record
-      Term : GNATCOLL.Terminal.Terminal_Info_Access;
+      Term                      : GNATCOLL.Terminal.Terminal_Info_Access;
       Last_Displayed_Feature_Id : Integer := -1;
-      Progress_Displayed : Boolean := False;
+      Progress_Displayed        : Boolean := False;
    end record;
 
    type Formatter_Full  is new Formatter with null record;
 
-   type Formatter_Dots  is new Formatter with null record;
+   type Formatter_Dots  is new Formatter with record
+      Failed : Scenario_Lists.List;
+      --  Failed scenarios, so that we can display them in the end
+
+   end record;
 
    type Formatter_Quiet is new Formatter with null record;
    type Formatter_Hide_Passed is new Formatter with null record;

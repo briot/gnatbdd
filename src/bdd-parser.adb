@@ -42,8 +42,8 @@ package body BDD.Parser is
                           In_String,
                           In_Outline, In_Examples);
       State  : State_Type := None;
-      F      : BDD.Features.Feature;
-      Scenar : BDD.Features.Scenario;
+      F      : BDD.Features.Feature := No_Feature;
+      Scenar : BDD.Features.Scenario := No_Scenario;
       Step   : BDD.Features.Step;
       Buffer : GNAT.Strings.String_Access := File.Read_File;
       Index  : Integer := Buffer'First;
@@ -70,8 +70,8 @@ package body BDD.Parser is
          case State is
             when In_Scenario | In_Outline | In_Examples =>
                Step := null;
-               Runner.Scenario_End (F, Scenar);
-               Free (Scenar);
+               Runner.Scenario_End (Scenar);
+               Scenar := No_Scenario;
                State := In_Feature;
 
             when others =>
@@ -88,7 +88,7 @@ package body BDD.Parser is
          Finish_Scenario;
          if State /= None then
             Runner.Feature_End (F);
-            Free (F);
+            F := No_Feature;
          end if;
 
          State := None;
@@ -204,7 +204,7 @@ package body BDD.Parser is
                  & Image (Line, 1);
             end if;
 
-            if Scenar /= null then
+            if Scenar /= No_Scenario then
                raise Syntax_Error with "Background must be defined before all"
                  & " Scenario, at " & File.Display_Full_Name & ":"
                  & Image (Line, 1);
@@ -212,13 +212,13 @@ package body BDD.Parser is
 
             Finish_Scenario;
 
-            Scenar := new Scenario_Record;
-            Scenar.Set_Attributes
-              (Name  => Get_Line_End (First_Char + Cst_Background'Length),
-               Kind  => Kind_Background,
-               Line  => Line,
-               Index => Positive'Last);
-            Runner.Scenario_Start (F, Scenar);
+            Scenar := Create
+              (Feature => F,
+               Name    => Get_Line_End (First_Char + Cst_Background'Length),
+               Kind    => Kind_Background,
+               Line    => Line,
+               Index   => Positive'Last);
+            Runner.Scenario_Start (Scenar);
             State := In_Scenario;
 
          elsif Starts_With (Buffer (First_Char .. Line_E), Cst_Scenario) then
@@ -231,13 +231,13 @@ package body BDD.Parser is
             Finish_Scenario;
             Index_In_Feature := Index_In_Feature + 1;
 
-            Scenar := new Scenario_Record;
-            Scenar.Set_Attributes
-              (Name  => Get_Line_End (First_Char + Cst_Scenario'Length),
-               Kind  => Kind_Scenario,
-               Line  => Line,
-               Index => Index_In_Feature);
-            Runner.Scenario_Start (F, Scenar);
+            Scenar := Create
+              (Feature => F,
+               Name    => Get_Line_End (First_Char + Cst_Scenario'Length),
+               Kind    => Kind_Scenario,
+               Line    => Line,
+               Index   => Index_In_Feature);
+            Runner.Scenario_Start (Scenar);
             State := In_Scenario;
 
          elsif Starts_With (Buffer (First_Char .. Line_E),
@@ -252,13 +252,13 @@ package body BDD.Parser is
             Finish_Scenario;
             Index_In_Feature := Index_In_Feature + 1;
 
-            Scenar := new Scenario_Record;
-            Scenar.Set_Attributes
-              (Name => Get_Line_End (First_Char + Cst_Scenario_Outline'Length),
-               Kind  => Kind_Outline,
-               Line  => Line,
+            Scenar := Create
+              (Feature => F,
+               Name => Get_Line_End (First_Char + Cst_Scenario_Outline'Length),
+               Kind => Kind_Outline,
+               Line => Line,
                Index => Index_In_Feature);
-            Runner.Scenario_Start (F, Scenar);
+            Runner.Scenario_Start (Scenar);
             State := In_Outline;
 
          elsif Starts_With (Buffer (First_Char .. Line_E), Cst_Scenarios) then
@@ -283,7 +283,7 @@ package body BDD.Parser is
            or else Starts_With (Buffer (First_Char .. Line_E), Cst_But)
            or else Starts_With (Buffer (First_Char .. Line_E), Cst_When)
          then
-            if Scenar = null then
+            if Scenar = No_Scenario then
                raise Syntax_Error with "Step must be defined with in a"
                  & " Scenario at " & File.Display_Full_Name & ":"
                  & Image (Line, 1);

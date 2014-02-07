@@ -25,6 +25,7 @@
 
 with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with GNATCOLL.Refcount;     use GNATCOLL.Refcount;
 
 package BDD.Features is
 
@@ -34,6 +35,7 @@ package BDD.Features is
 
    type Step_Record (<>) is tagged private;
    type Step is access all Step_Record'Class;
+   --  A step is owned by its scenario, so must not be freed explictly.
 
    function Create
      (Text : String; Line : Positive) return not null access Step_Record;
@@ -45,10 +47,6 @@ package BDD.Features is
      (Self : not null access Step_Record'Class; Text : String);
    --  Add some contents to the final multi-line string.
    --  Text is always added a ASCII.LF
-
-   procedure Free (Self : in out Step_Record);
-   procedure Free (Self : in out Step);
-   --  Free the memory associated with Self
 
    function Line (Self : not null access Step_Record) return Positive;
    function Text (Self : not null access Step_Record) return String;
@@ -62,89 +60,79 @@ package BDD.Features is
      (Self   : not null access Step_Record) return BDD.Scenario_Status;
    --  Set the status for a specific step
 
-   --------------
-   -- Scenario --
-   --------------
-
-   type Scenario_Record is tagged private;
-   type Scenario is access all Scenario_Record'Class;
-   --  A scenario to be run within a feature
-
-   procedure Free (Self : in out Scenario_Record);
-   procedure Free (Self : in out Scenario);
-   --  Free the memory associated with Self
-
-   type Scenario_Kind is (Kind_Scenario, Kind_Background, Kind_Outline);
-
-   procedure Set_Attributes
-     (Self  : not null access Scenario_Record;
-      Kind  : Scenario_Kind;
-      Name  : String;
-      Line  : Positive;
-      Index : Positive);
-   --  Set the line of the feature file at which the scenario is defined, and
-   --  its index within its Feature.
-
-   function Name  (Self : not null access Scenario_Record) return String;
-   function Line  (Self : not null access Scenario_Record) return Positive;
-   function Index (Self : not null access Scenario_Record) return Positive;
-   function Kind
-     (Self : not null access Scenario_Record) return Scenario_Kind;
-   --  Retrieve the attributes of Self
-
-   procedure Add
-     (Self : not null access Scenario_Record;
-      S    : not null access Step_Record'Class);
-   --  Add a new step
-
-   procedure Foreach_Step
-     (Self : not null access Scenario_Record;
-      Callback : not null access procedure
-        (S : not null access Step_Record'Class));
-   --  Iterate over each step
-
-   function Longuest_Step
-     (Self : not null access Scenario_Record) return Natural;
-   --  The length of the longuest step (for display purposes)
-
    -------------
    -- Feature --
    -------------
 
-   type Feature_Record (<>) is tagged limited private;
-   type Feature is access all Feature_Record'Class;
+   type Feature is tagged private;
    --  An object that represents a single feature and all its scenarios.
    --  A specific features file might contain several features, but this object
    --  only represents one of them.
-   --
-   --  This type has a discriminant to force the allocation through Create,
-   --  which ensures the feature has a unique id.
+   --  This is a ref-counted type
+
+   No_Feature : constant Feature;
 
    function Create
      (File : GNATCOLL.VFS.Virtual_File;
-      Name : String)
-      return not null access Feature_Record;
+      Name : String) return Feature;
    --  Create and initialize a new feature
 
-   procedure Free (Self : in out Feature);
-   procedure Free (Self : in out Feature_Record);
-   --  Free the memory associated with Self
-
-   function Id (Self : not null access Feature_Record) return Integer;
+   function Id (Self : Feature) return Integer;
    --  Set a unique id for the feature
 
-   function Name (Self : not null access Feature_Record) return String;
+   function Name (Self : Feature) return String;
    --  The name of the feature
 
-   function File
-     (Self : not null access Feature_Record) return GNATCOLL.VFS.Virtual_File;
+   function File (Self : Feature) return GNATCOLL.VFS.Virtual_File;
    --  The file in which the feature is defined
 
-   function Description (Self : not null access Feature_Record) return String;
-   procedure Add_To_Description
-     (Self : not null access Feature_Record; Descr : String);
+   function Description (Self : Feature) return String;
+   procedure Add_To_Description (Self : Feature; Descr : String);
    --  Add some description information. Add_Description will be called once
    --  for each line in the description.
+
+   --------------
+   -- Scenario --
+   --------------
+
+   type Scenario is tagged private;
+   --  A scenario to be run within a feature.
+   --  This is a ref-counted type.
+
+   No_Scenario : constant Scenario;
+
+   type Scenario_Kind is (Kind_Scenario, Kind_Background, Kind_Outline);
+
+   function Create
+     (Feature : BDD.Features.Feature'Class;
+      Kind    : Scenario_Kind;
+      Name    : String;
+      Line    : Positive;
+      Index   : Positive) return Scenario;
+   --  Creates a new scenario.
+
+   function Name        (Self : Scenario) return String;
+   function Line        (Self : Scenario) return Positive;
+   function Index       (Self : Scenario) return Positive;
+   function Kind        (Self : Scenario) return Scenario_Kind;
+   function Get_Feature (Self : Scenario) return Feature'Class;
+   --  Retrieve the attributes of Self
+
+   procedure Add (Self : Scenario; S : not null access Step_Record'Class);
+   --  Add a new step
+
+   procedure Foreach_Step
+     (Self     : Scenario;
+      Callback : not null access procedure
+        (S : not null access Step_Record'Class));
+   --  Iterate over each step
+
+   procedure Set_Status (Self : Scenario; Status : BDD.Scenario_Status);
+   function Status (Self : Scenario) return BDD.Scenario_Status;
+   --  Set the status for a specific step
+
+   function Longuest_Step (Self : Scenario) return Natural;
+   --  The length of the longuest step (for display purposes)
 
 private
    type Step_Record is tagged record
@@ -158,22 +146,42 @@ private
    type Step_List is new Step_Lists.List with null record;
    overriding procedure Clear (List : in out Step_List);
 
-   type Scenario_Record is tagged record
-      Name      : Ada.Strings.Unbounded.Unbounded_String;
-      Line      : Positive := 1;
-      Index     : Positive := 1;
-      Kind      : Scenario_Kind := Kind_Scenario;
-      Steps     : Step_List;
+   procedure Free (Self : in out Step_Record);
+   procedure Free (Self : in out Step);
+   --  Free the memory associated with Self
 
-      Longuest_Step : Integer := -1;
-   end record;
-   --  Make sure this type can be put in a list and automatically reclaim
-   --  storage when the list is clearer.
-
-   type Feature_Record is tagged limited record
+   type Feature_Record is new GNATCOLL.Refcount.Refcounted with record
       File        : GNATCOLL.VFS.Virtual_File;
       Name        : GNAT.Strings.String_Access;
       Id          : Integer;
       Description : Ada.Strings.Unbounded.Unbounded_String;
    end record;
+   overriding procedure Free (Self : in out Feature_Record);
+   package Feature_Pointers is new GNATCOLL.Refcount.Smart_Pointers
+     (Feature_Record);
+   type Feature is new Feature_Pointers.Ref with null record;
+
+   No_Feature : constant Feature :=
+     (Feature_Pointers.Null_Ref with null record);
+
+   type Scenario_Record is new Refcounted with record
+      Name          : Ada.Strings.Unbounded.Unbounded_String;
+      Line          : Positive := 1;
+      Index         : Positive := 1;
+      Kind          : Scenario_Kind := Kind_Scenario;
+      Steps         : Step_List;
+      Longuest_Step : Integer := -1;
+      Status        : BDD.Scenario_Status;
+      Feature       : BDD.Features.Feature;
+   end record;
+
+   overriding procedure Free (Self : in out Scenario_Record);
+
+   package Scenario_Pointers is new GNATCOLL.Refcount.Smart_Pointers
+     (Scenario_Record);
+   type Scenario is new Scenario_Pointers.Ref with null record;
+
+   No_Scenario : constant Scenario :=
+     (Scenario_Pointers.Null_Ref with null record);
+
 end BDD.Features;

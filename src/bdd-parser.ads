@@ -36,28 +36,26 @@ package BDD.Parser is
 
    procedure Feature_Start
      (Self     : in out Abstract_Feature_Runner;
-      Feature  : not null access BDD.Features.Feature_Record'Class) is null;
+      Feature  : BDD.Features.Feature) is null;
    --  Called on the first line of a feature.
    --  At this stage, only the name and file or the feature are known, but none
    --  of its scenarios
 
    procedure Scenario_Start
      (Self     : in out Abstract_Feature_Runner;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class) is null;
+      Scenario : BDD.Features.Scenario) is null;
    --  Called on the first line of a scenario.
    --  At this stage, only the name and location of the scenario are known, but
    --  none of its steps.
 
    procedure Scenario_End
      (Self     : in out Abstract_Feature_Runner;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class) is null;
+      Scenario : BDD.Features.Scenario) is null;
    --  Called when the last step in a scenario has been seen.
 
    procedure Feature_End
      (Self     : in out Abstract_Feature_Runner;
-      Feature  : not null access BDD.Features.Feature_Record'Class) is null;
+      Feature  : BDD.Features.Feature) is null;
    --  Called when the last line of a feature has been seen.
 
    type Feature_Parser is tagged private;

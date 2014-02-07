@@ -65,8 +65,7 @@ package BDD.Runner is
 
    overriding procedure Scenario_End
      (Self     : in out Feature_Runner;
-      Feature  : not null access BDD.Features.Feature_Record'Class;
-      Scenario : not null access BDD.Features.Scenario_Record'Class);
+      Scenario : BDD.Features.Scenario);
 
 private
    type Feature_Runner is new BDD.Parser.Abstract_Feature_Runner with record

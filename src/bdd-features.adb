@@ -23,8 +23,10 @@
 
 with Ada.Strings.Fixed;          use Ada.Strings, Ada.Strings.Fixed;
 with Ada.Unchecked_Deallocation;
+with GNATCOLL.Traces;            use GNATCOLL.Traces;
 
 package body BDD.Features is
+   Me : constant Trace_Handle := Create ("BDD.FEATURES");
 
    protected type Ids is
       procedure Get_Next (Id : out Integer);
@@ -61,13 +63,16 @@ package body BDD.Features is
    function Create
      (File : GNATCOLL.VFS.Virtual_File;
       Name : String)
-      return not null access Feature_Record
+      return Feature
    is
-      Self : constant Feature := new Feature_Record;
+      R : constant not null access Feature_Record := new Feature_Record;
+      Self : Feature;
    begin
-      Self.Name := new String'(Trim (Name, Both));
-      Self.File := File;
-      Feature_Ids.Get_Next (Self.Id);
+      Self.Set (R);
+      R.Name := new String'(Trim (Name, Both));
+      R.File := File;
+      Feature_Ids.Get_Next (R.Id);
+      Trace (Me, "Create feature " & R.Id'Img);
       return Self;
    end Create;
 
@@ -77,6 +82,7 @@ package body BDD.Features is
 
    procedure Free (Self : in out Feature_Record) is
    begin
+      Trace (Me, "Free feature" & Self.Id'Img);
       Self.File := No_File;
       Self.Id := -1;
       Free (Self.Name);
@@ -84,49 +90,33 @@ package body BDD.Features is
    end Free;
 
    ----------
-   -- Free --
-   ----------
-
-   procedure Free (Self : in out Feature) is
-      procedure Unchecked_Free is new Ada.Unchecked_Deallocation
-        (Feature_Record'Class, Feature);
-   begin
-      if Self /= null then
-         Free (Self.all);
-         Unchecked_Free (Self);
-      end if;
-   end Free;
-
-   ----------
    -- Name --
    ----------
 
-   function Name (Self : not null access Feature_Record) return String is
+   function Name (Self : Feature) return String is
    begin
-      if Self.Name = null then
+      if Self.Get.Name = null then
          return "";
       end if;
-      return Self.Name.all;
+      return Self.Get.Name.all;
    end Name;
 
    ----------
    -- File --
    ----------
 
-   function File
-     (Self : not null access Feature_Record)
-      return GNATCOLL.VFS.Virtual_File is
+   function File (Self : Feature) return GNATCOLL.VFS.Virtual_File is
    begin
-      return Self.File;
+      return Self.Get.File;
    end File;
 
    --------
    -- Id --
    --------
 
-   function Id (Self : not null access Feature_Record) return Integer is
+   function Id (Self : Feature) return Integer is
    begin
-      return Self.Id;
+      return Self.Get.Id;
    end Id;
 
    ----------
@@ -135,74 +125,85 @@ package body BDD.Features is
 
    procedure Free (Self : in out Scenario_Record) is
    begin
+      Trace (Me, "Free scenario index=" & Self.Index'Img);
       Self.Name  := Null_Unbounded_String;
       Self.Line  := 1;
       Self.Index := 1;
       Self.Kind  := Kind_Scenario;
+      Self.Feature := No_Feature;
       Self.Steps.Clear;
-   end Free;
-
-   ----------
-   -- Free --
-   ----------
-
-   procedure Free (Self : in out Scenario) is
-      procedure Unchecked_Free is new Ada.Unchecked_Deallocation
-        (Scenario_Record'Class, Scenario);
-   begin
-      if Self /= null then
-         Free (Self.all);
-         Unchecked_Free (Self);
-      end if;
    end Free;
 
    ----------
    -- Name --
    ----------
 
-   function Name (Self : not null access Scenario_Record) return String is
+   function Name (Self : Scenario) return String is
    begin
-      return To_String (Self.Name);
+      return To_String (Self.Get.Name);
    end Name;
 
    ----------
    -- Line --
    ----------
 
-   function Line (Self : not null access Scenario_Record) return Positive is
+   function Line (Self : Scenario) return Positive is
    begin
-      return Self.Line;
+      return Self.Get.Line;
    end Line;
 
    -----------
    -- Index --
    -----------
 
-   function Index (Self : not null access Scenario_Record) return Positive is
+   function Index (Self : Scenario) return Positive is
    begin
-      return Self.Index;
+      return Self.Get.Index;
    end Index;
 
    ----------
    -- Kind --
    ----------
 
-   function Kind
-     (Self : not null access Scenario_Record) return Scenario_Kind is
+   function Kind (Self : Scenario) return Scenario_Kind is
    begin
-      return Self.Kind;
+      return Self.Get.Kind;
    end Kind;
+
+   -----------------
+   -- Get_Feature --
+   -----------------
+
+   function Get_Feature (Self : Scenario) return Feature'Class is
+   begin
+      return Self.Get.Feature;
+   end Get_Feature;
+
+   ----------------
+   -- Set_Status --
+   ----------------
+
+   procedure Set_Status (Self : Scenario; Status : BDD.Scenario_Status) is
+   begin
+      Self.Get.Status := Status;
+   end Set_Status;
+
+   ------------
+   -- Status --
+   ------------
+
+   function Status (Self : Scenario) return BDD.Scenario_Status is
+   begin
+      return Self.Get.Status;
+   end Status;
 
    ---------
    -- Add --
    ---------
 
-   procedure Add
-     (Self : not null access Scenario_Record;
-      S    : not null access Step_Record'Class)
-   is
+   procedure Add (Self : Scenario; S : not null access Step_Record'Class) is
    begin
-      Self.Steps.Append (S);
+      Self.Get.Steps.Append (S);
    end Add;
 
    ------------------
@@ -210,12 +211,12 @@ package body BDD.Features is
    ------------------
 
    procedure Foreach_Step
-     (Self : not null access Scenario_Record;
+     (Self : Scenario;
       Callback : not null access procedure
         (S : not null access Step_Record'Class))
    is
    begin
-      for S of Self.Steps loop
+      for S of Self.Get.Steps loop
          Callback (S);
       end loop;
    end Foreach_Step;
@@ -224,55 +225,59 @@ package body BDD.Features is
    -- Longuest_Step --
    -------------------
 
-   function Longuest_Step
-     (Self : not null access Scenario_Record) return Natural is
+   function Longuest_Step (Self : Scenario) return Natural is
+      R : constant not null access Scenario_Record'Class := Self.Get;
    begin
-      if Self.Longuest_Step = -1 then
-         Self.Longuest_Step := Length (Self.Name) + Cst_Scenario'Length + 1;
-         for S of Self.Steps loop
-            Self.Longuest_Step := Integer'Max
-              (Self.Longuest_Step, Length (S.Text));
+      if R.Longuest_Step = -1 then
+         R.Longuest_Step := Length (R.Name) + Cst_Scenario'Length + 1;
+         for S of R.Steps loop
+            R.Longuest_Step := Integer'Max (R.Longuest_Step, Length (S.Text));
          end loop;
       end if;
-      return Self.Longuest_Step;
+      return R.Longuest_Step;
    end Longuest_Step;
 
-   --------------------
-   -- Set_Attributes --
-   --------------------
+   ------------
+   -- Create --
+   ------------
 
-   procedure Set_Attributes
-     (Self  : not null access Scenario_Record;
+   function Create
+     (Feature : BDD.Features.Feature'Class;
       Kind  : Scenario_Kind;
       Name  : String;
       Line  : Positive;
-      Index : Positive) is
+      Index : Positive) return Scenario
+   is
+      Self : Scenario;
+      R    : constant not null access Scenario_Record := new Scenario_Record;
    begin
-      Self.Name  := To_Unbounded_String (Trim (Name, Both));
-      Self.Line  := Line;
-      Self.Index := Index;
-      Self.Kind  := Kind;
-   end Set_Attributes;
+      Self.Set (R);
+      R.Name    := To_Unbounded_String (Trim (Name, Both));
+      R.Line    := Line;
+      R.Index   := Index;
+      R.Kind    := Kind;
+      R.Feature := BDD.Features.Feature (Feature);
+      Trace (Me, "Create scenario index=" & Index'Img);
+      return Self;
+   end Create;
 
    -----------------
    -- Description --
    -----------------
 
-   function Description
-     (Self : not null access Feature_Record) return String is
+   function Description (Self : Feature) return String is
    begin
-      return To_String (Self.Description);
+      return To_String (Self.Get.Description);
    end Description;
 
    ------------------------
    -- Add_To_Description --
    ------------------------
 
-   procedure Add_To_Description
-     (Self : not null access Feature_Record; Descr : String) is
+   procedure Add_To_Description (Self : Feature; Descr : String) is
    begin
       --  Indent the description as it will be displayed
-      Append (Self.Description, "  " & Descr & ASCII.LF);
+      Append (Self.Get.Description, "  " & Descr & ASCII.LF);
    end Add_To_Description;
 
    ------------
@@ -287,6 +292,7 @@ package body BDD.Features is
       Self.Text   := To_Unbounded_String (Text);
       Self.Line   := Line;
       Self.Status := Status_Undefined;
+      Trace (Me, "Create step at line" & Line'Img);
       return Self;
    end Create;
 
@@ -333,6 +339,7 @@ package body BDD.Features is
 
    procedure Free (Self : in out Step_Record) is
    begin
+      Trace (Me, "Free step at line" & Self.Line'Img);
       Self.Text      := Null_Unbounded_String;
       Self.Multiline := Null_Unbounded_String;
       Self.Line      := 1;

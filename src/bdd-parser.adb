@@ -36,6 +36,7 @@ package body BDD.Parser is
       File   : GNATCOLL.VFS.Virtual_File;
       Runner : in out Abstract_Feature_Runner'Class)
    is
+      pragma Unreferenced (Self);
       type State_Type is (None, In_Feature,
                           In_Scenario,
                           In_String,
@@ -184,10 +185,10 @@ package body BDD.Parser is
 
          elsif Starts_With (Buffer (First_Char .. Line_E), Cst_Features) then
             Finish_Feature;
-            F.Set_Unique_Id (Self.F_Id);
-            Self.F_Id := Self.F_Id + 1;
-            F.Set_File (File);
-            F.Set_Name (Buffer (First_Char + Cst_Features'Length .. Line_E));
+
+            F := Create
+              (File => File,
+               Name => Buffer (First_Char + Cst_Features'Length .. Line_E));
             Runner.Feature_Start (F);
             Index_In_Feature := 0;
             State := In_Feature;
@@ -296,7 +297,7 @@ package body BDD.Parser is
                  & Image (Line, 1);
 
             elsif State = In_Feature then
-               F.Add_Description (Buffer (First_Char .. Line_E));
+               F.Add_To_Description (Buffer (First_Char .. Line_E));
 
             elsif State = In_Scenario
               or else State = In_Outline

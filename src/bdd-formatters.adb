@@ -27,26 +27,26 @@ with GNATCOLL.Utils; use GNATCOLL.Utils;
 package body BDD.Formatters is
 
    function Scenario_Name
-     (Feature  : BDD.Features.Feature'Class;
+     (Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
       return String;
    --  Return a string used to identify the scenario for the user.
 
    procedure Display_Location
      (Self     : Formatter'Class;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class);
    --  Display location information for the scenario
 
    procedure Display_Scenario_Header
      (Self     : in out Formatter'Class;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class);
    --  Display the feature and scenario headers, as needed.
 
    procedure Display_Progress
      (Self     : in out Formatter'Class;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class);
    --  Display the name of the scenario being run, if supported by the
    --  terminal
@@ -71,7 +71,7 @@ package body BDD.Formatters is
    -------------------
 
    function Scenario_Name
-     (Feature  : BDD.Features.Feature'Class;
+     (Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
       return String
    is
@@ -87,7 +87,7 @@ package body BDD.Formatters is
 
    procedure Display_Location
      (Self     : Formatter'Class;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
    is
    begin
@@ -107,7 +107,7 @@ package body BDD.Formatters is
 
    procedure Display_Progress
      (Self     : in out Formatter'Class;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
    is
       Width : constant Integer := Self.Term.Get_Width;
@@ -154,7 +154,7 @@ package body BDD.Formatters is
 
    procedure Display_Scenario_Header
      (Self     : in out Formatter'Class;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
    is
    begin
@@ -174,7 +174,7 @@ package body BDD.Formatters is
 
    overriding procedure Scenario_Start
      (Self     : in out Formatter_Full;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
    is
    begin
@@ -189,7 +189,7 @@ package body BDD.Formatters is
 
    overriding procedure Scenario_Completed
      (Self     : in out Formatter_Full;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class;
       Status   : BDD.Scenario_Status)
    is
@@ -205,7 +205,7 @@ package body BDD.Formatters is
 
    overriding procedure Scenario_Completed
      (Self     : in out Formatter_Dots;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class;
       Status   : BDD.Scenario_Status)
    is
@@ -229,7 +229,7 @@ package body BDD.Formatters is
 
    overriding procedure Scenario_Start
      (Self     : in out Formatter_Quiet;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
    is
    begin
@@ -242,7 +242,7 @@ package body BDD.Formatters is
 
    overriding procedure Scenario_Completed
      (Self     : in out Formatter_Quiet;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class;
       Status   : BDD.Scenario_Status)
    is
@@ -257,7 +257,7 @@ package body BDD.Formatters is
 
    procedure Scenario_Start
      (Self     : in out Formatter_Hide_Passed;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
    is
    begin
@@ -270,7 +270,7 @@ package body BDD.Formatters is
 
    overriding procedure Scenario_Completed
      (Self     : in out Formatter_Hide_Passed;
-      Feature  : BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class;
       Status   : BDD.Scenario_Status)
    is

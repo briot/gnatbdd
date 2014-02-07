@@ -26,11 +26,56 @@ with Ada.Unchecked_Deallocation;
 
 package body BDD.Features is
 
+   protected type Ids is
+      procedure Get_Next (Id : out Integer);
+      --  Get the next unique id
+
+   private
+      Current : Integer := 0;
+   end Ids;
+
+   ---------
+   -- Ids --
+   ---------
+
+   protected body Ids is
+
+      --------------
+      -- Get_Next --
+      --------------
+
+      procedure Get_Next (Id : out Integer) is
+      begin
+         Current := Current + 1;
+         Id := Current;
+      end Get_Next;
+
+   end Ids;
+
+   Feature_Ids : Ids;
+
+   ------------
+   -- Create --
+   ------------
+
+   function Create
+     (File : GNATCOLL.VFS.Virtual_File;
+      Name : String)
+      return not null access Feature_Record
+   is
+      Self : constant Feature := new Feature_Record;
+   begin
+      Self.Name := new String'(Trim (Name, Both));
+      Self.File := File;
+      Feature_Ids.Get_Next (Self.Id);
+      return Self;
+   end Create;
+
    ----------
    -- Free --
    ----------
 
-   procedure Free (Self : in out Feature) is
+   procedure Free (Self : in out Feature_Record) is
    begin
       Self.File := No_File;
       Self.Id := -1;
@@ -38,21 +83,25 @@ package body BDD.Features is
       Self.Description := Null_Unbounded_String;
    end Free;
 
-   --------------
-   -- Set_Name --
-   --------------
+   ----------
+   -- Free --
+   ----------
 
-   procedure Set_Name (Self : in out Feature; Name : String) is
+   procedure Free (Self : in out Feature) is
+      procedure Unchecked_Free is new Ada.Unchecked_Deallocation
+        (Feature_Record'Class, Feature);
    begin
-      Free (Self.Name);
-      Self.Name := new String'(Trim (Name, Both));
-   end Set_Name;
+      if Self /= null then
+         Free (Self.all);
+         Unchecked_Free (Self);
+      end if;
+   end Free;
 
    ----------
    -- Name --
    ----------
 
-   function Name (Self : Feature) return String is
+   function Name (Self : not null access Feature_Record) return String is
    begin
       if Self.Name = null then
          return "";
@@ -60,39 +109,22 @@ package body BDD.Features is
       return Self.Name.all;
    end Name;
 
-   --------------
-   -- Set_File --
-   --------------
-
-   procedure Set_File
-     (Self : in out Feature; File : GNATCOLL.VFS.Virtual_File) is
-   begin
-      Self.File := File;
-   end Set_File;
-
    ----------
    -- File --
    ----------
 
-   function File (Self : Feature) return GNATCOLL.VFS.Virtual_File is
+   function File
+     (Self : not null access Feature_Record)
+      return GNATCOLL.VFS.Virtual_File is
    begin
       return Self.File;
    end File;
-
-   -------------------
-   -- Set_Unique_Id --
-   -------------------
-
-   procedure Set_Unique_Id (Self : in out Feature; Id : Integer) is
-   begin
-      Self.Id := Id;
-   end Set_Unique_Id;
 
    --------
    -- Id --
    --------
 
-   function Id (Self : Feature) return Integer is
+   function Id (Self : not null access Feature_Record) return Integer is
    begin
       return Self.Id;
    end Id;
@@ -194,20 +226,22 @@ package body BDD.Features is
    -- Description --
    -----------------
 
-   function Description (Self : Feature) return String is
+   function Description
+     (Self : not null access Feature_Record) return String is
    begin
       return To_String (Self.Description);
    end Description;
 
-   ---------------------
-   -- Add_Description --
-   ---------------------
+   ------------------------
+   -- Add_To_Description --
+   ------------------------
 
-   procedure Add_Description (Self : in out Feature; Descr : String) is
+   procedure Add_To_Description
+     (Self : not null access Feature_Record; Descr : String) is
    begin
       --  Indent the description as it will be displayed
       Append (Self.Description, "  " & Descr & ASCII.LF);
-   end Add_Description;
+   end Add_To_Description;
 
    --------------
    -- Set_Text --

@@ -36,14 +36,14 @@ package BDD.Parser is
 
    procedure Feature_Start
      (Self     : in out Abstract_Feature_Runner;
-      Feature  : in out BDD.Features.Feature'Class) is null;
+      Feature  : not null access BDD.Features.Feature_Record'Class) is null;
    --  Called on the first line of a feature.
    --  At this stage, only the name and file or the feature are known, but none
    --  of its scenarios
 
    procedure Scenario_Start
      (Self     : in out Abstract_Feature_Runner;
-      Feature  : in out BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class) is null;
    --  Called on the first line of a scenario.
    --  At this stage, only the name and location of the scenario are known, but
@@ -51,13 +51,13 @@ package BDD.Parser is
 
    procedure Scenario_End
      (Self     : in out Abstract_Feature_Runner;
-      Feature  : in out BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class) is null;
    --  Called when the last step in a scenario has been seen.
 
    procedure Feature_End
      (Self     : in out Abstract_Feature_Runner;
-      Feature  : in out BDD.Features.Feature'Class) is null;
+      Feature  : not null access BDD.Features.Feature_Record'Class) is null;
    --  Called when the last line of a feature has been seen.
 
    type Feature_Parser is tagged private;
@@ -73,10 +73,6 @@ package BDD.Parser is
    --  Raises Syntax_Error when the file does not contain valid syntax.
 
 private
-   type Feature_Parser is tagged record
-      F_Id   : Natural := 1;
-      --  Unique Id for the features that are parsed.
-      --  This is increased for all new feature found by this parser.
-   end record;
+   type Feature_Parser is tagged null record;
 
 end BDD.Parser;

@@ -82,29 +82,38 @@ package BDD.Features is
    -- Feature --
    -------------
 
-   type Feature is tagged limited private;
+   type Feature_Record (<>) is tagged limited private;
+   type Feature is access all Feature_Record'Class;
    --  An object that represents a single feature and all its scenarios.
    --  A specific features file might contain several features, but this object
    --  only represents one of them.
+   --
+   --  This type has a discriminant to force the allocation through Create,
+   --  which ensures the feature has a unique id.
+
+   function Create
+     (File : GNATCOLL.VFS.Virtual_File;
+      Name : String)
+      return not null access Feature_Record;
+   --  Create and initialize a new feature
 
    procedure Free (Self : in out Feature);
+   procedure Free (Self : in out Feature_Record);
    --  Free the memory associated with Self
 
-   procedure Set_Unique_Id (Self : in out Feature; Id : Integer);
-   function Id (Self : Feature) return Integer;
+   function Id (Self : not null access Feature_Record) return Integer;
    --  Set a unique id for the feature
 
-   procedure Set_Name (Self : in out Feature; Name : String);
-   function Name (Self : Feature) return String;
+   function Name (Self : not null access Feature_Record) return String;
    --  The name of the feature
 
-   procedure Set_File
-     (Self : in out Feature; File : GNATCOLL.VFS.Virtual_File);
-   function File (Self : Feature) return GNATCOLL.VFS.Virtual_File;
+   function File
+     (Self : not null access Feature_Record) return GNATCOLL.VFS.Virtual_File;
    --  The file in which the feature is defined
 
-   function Description (Self : Feature) return String;
-   procedure Add_Description (Self : in out Feature; Descr : String);
+   function Description (Self : not null access Feature_Record) return String;
+   procedure Add_To_Description
+     (Self : not null access Feature_Record; Descr : String);
    --  Add some description information. Add_Description will be called once
    --  for each line in the description.
 
@@ -127,7 +136,7 @@ private
    --  Make sure this type can be put in a list and automatically reclaim
    --  storage when the list is clearer.
 
-   type Feature is tagged limited record
+   type Feature_Record is tagged limited record
       File        : GNATCOLL.VFS.Virtual_File;
       Name        : GNAT.Strings.String_Access;
       Id          : Integer;

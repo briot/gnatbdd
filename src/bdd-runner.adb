@@ -103,7 +103,7 @@ package body BDD.Runner is
 
    overriding procedure Scenario_Start
      (Self     : in out Feature_Runner;
-      Feature  : in out BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
    is
    begin
@@ -118,7 +118,7 @@ package body BDD.Runner is
 
    overriding procedure Scenario_End
      (Self     : in out Feature_Runner;
-      Feature  : in out BDD.Features.Feature'Class;
+      Feature  : not null access BDD.Features.Feature_Record'Class;
       Scenario : not null access BDD.Features.Scenario_Record'Class)
    is
       Status : Scenario_Status;

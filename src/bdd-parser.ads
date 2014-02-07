@@ -44,7 +44,7 @@ package BDD.Parser is
    procedure Scenario_Start
      (Self     : in out Abstract_Feature_Runner;
       Feature  : in out BDD.Features.Feature'Class;
-      Scenario : in out BDD.Features.Scenario'Class) is null;
+      Scenario : not null access BDD.Features.Scenario_Record'Class) is null;
    --  Called on the first line of a scenario.
    --  At this stage, only the name and location of the scenario are known, but
    --  none of its steps.
@@ -52,7 +52,7 @@ package BDD.Parser is
    procedure Scenario_End
      (Self     : in out Abstract_Feature_Runner;
       Feature  : in out BDD.Features.Feature'Class;
-      Scenario : in out BDD.Features.Scenario'Class) is null;
+      Scenario : not null access BDD.Features.Scenario_Record'Class) is null;
    --  Called when the last step in a scenario has been seen.
 
    procedure Feature_End

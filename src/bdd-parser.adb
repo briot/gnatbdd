@@ -206,6 +206,8 @@ package body BDD.Parser is
             end if;
 
             Finish_Scenario;
+
+            Scenar := new Scenario_Record;
             Scenar.Set_Attributes
               (Name  => Get_Line_End (First_Char + Cst_Background'Length),
                Kind  => Kind_Background,
@@ -223,6 +225,8 @@ package body BDD.Parser is
 
             Finish_Scenario;
             Index_In_Feature := Index_In_Feature + 1;
+
+            Scenar := new Scenario_Record;
             Scenar.Set_Attributes
               (Name  => Get_Line_End (First_Char + Cst_Scenario'Length),
                Kind  => Kind_Scenario,
@@ -242,6 +246,8 @@ package body BDD.Parser is
 
             Finish_Scenario;
             Index_In_Feature := Index_In_Feature + 1;
+
+            Scenar := new Scenario_Record;
             Scenar.Set_Attributes
               (Name => Get_Line_End (First_Char + Cst_Scenario_Outline'Length),
                Kind  => Kind_Outline,

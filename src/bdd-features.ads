@@ -25,6 +25,7 @@
 
 with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with BDD.Tables;            use BDD.Tables;
 with GNATCOLL.Refcount;     use GNATCOLL.Refcount;
 
 package BDD.Features is
@@ -48,9 +49,14 @@ package BDD.Features is
    --  Add some contents to the final multi-line string.
    --  Text is always added a ASCII.LF
 
+   procedure Add_To_Table
+     (Self : not null access Step_Record'Class; Row : String);
+   --  Add a new row to the table associated with Self.
+
    function Line (Self : not null access Step_Record) return Positive;
    function Text (Self : not null access Step_Record) return String;
    function Multiline (Self : not null access Step_Record) return String;
+   function Table (Self : not null access Step_Record) return BDD.Tables.Table;
    --  Return the components of the step
 
    procedure Set_Status
@@ -144,6 +150,7 @@ private
       Text      : Ada.Strings.Unbounded.Unbounded_String;
       Multiline : Ada.Strings.Unbounded.Unbounded_String;
       Status    : BDD.Scenario_Status;
+      Table     : BDD.Tables.Table;
    end record;
 
    package Step_Lists is new Ada.Containers.Doubly_Linked_Lists (Step);

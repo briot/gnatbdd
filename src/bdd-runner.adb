@@ -149,7 +149,7 @@ package body BDD.Runner is
          case Scenario.Status is
             when Status_Passed =>
                --  ??? Simulate a run
-               delay 0.2;
+               --  delay 0.2;
                if Step.Line >= 25 and then Step.Line <= 26 then
                   Step.Set_Status (Status_Passed);
                elsif Step.Line = 47 then
@@ -162,8 +162,11 @@ package body BDD.Runner is
                   Step.Set_Status (Status_Passed);
                end if;
 
-               Self.Steps_Stats (Step.Status) :=
-                 Self.Steps_Stats (Step.Status) + 1;
+               if Show_Steps then
+                  Self.Steps_Stats (Step.Status) :=
+                    Self.Steps_Stats (Step.Status) + 1;
+               end if;
+
                Scenario.Set_Status (Step.Status);
 
             when Status_Failed | Status_Skipped | Status_Undefined =>

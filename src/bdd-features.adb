@@ -408,4 +408,30 @@ package body BDD.Features is
       end case;
    end Prefix;
 
+   ------------------
+   -- Add_To_Table --
+   ------------------
+
+   procedure Add_To_Table
+     (Self : not null access Step_Record'Class; Row : String)
+   is
+   begin
+      if Self.Table = No_Table then
+         Self.Table := Create;
+      end if;
+
+      Self.Table.Add_Row_As_String (Row);
+   end Add_To_Table;
+
+   -----------
+   -- Table --
+   -----------
+
+   function Table
+     (Self : not null access Step_Record) return BDD.Tables.Table
+   is
+   begin
+      return Self.Table;
+   end Table;
+
 end BDD.Features;

@@ -193,6 +193,7 @@ the steps can be configured, namely **multi-line strings** and **tables**.
           When I log in as "Jack"
           Then I should see the home page
 
+   Leading and trailing spaces are ignored for each cell in the table.
 
 Background scenario
 -------------------

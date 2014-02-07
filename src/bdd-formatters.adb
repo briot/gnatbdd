@@ -23,6 +23,7 @@
 
 with Ada.Containers; use Ada.Containers;
 with Ada.Text_IO;    use Ada.Text_IO;
+with BDD.Tables;     use BDD.Tables;
 with GNATCOLL.Utils; use GNATCOLL.Utils;
 
 package body BDD.Formatters is
@@ -302,6 +303,14 @@ package body BDD.Formatters is
             end loop;
 
             Put_Line ("      """"""");
+         end if;
+
+         if Step.Table /= No_Table then
+            Self.Term.Set_Color
+              (Term       => Ada.Text_IO.Standard_Output,
+               Foreground => BDD.Step_Colors (Step.Status));
+            Step.Table.Display
+              (Ada.Text_IO.Standard_Output, Prefix => "      ");
          end if;
       end;
 

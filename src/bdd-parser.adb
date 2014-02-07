@@ -176,13 +176,13 @@ package body BDD.Parser is
          elsif Buffer (First_Char) = '|' then
             case State is
                when In_Background | In_Scenario | In_Outline =>
-                  if Step /= null then
-                     Trace (Me, "MANU Table=" & Buffer (First_Char .. Line_E));
-                  else
+                  if Step = null then
                      raise Syntax_Error with "Tables only allowed in"
                        & " steps, at " & File.Display_Full_Name & ":"
                        & Image (Line, 1);
                   end if;
+
+                  Step.Add_To_Table (Buffer (First_Char .. Line_E));
 
                when In_Examples =>
                   Trace (Me, "MANU Example=" & Buffer (First_Char .. Line_E));

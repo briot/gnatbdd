@@ -56,7 +56,14 @@ package BDD.Formatters is
    --  Called when a step has completed.
    --  Step.Status has been set appropriately
 
-   procedure All_Features_Completed (Self : in out Formatter) is null;
+   type Count_Array is array (Scenario_Status) of Natural;
+
+   procedure All_Features_Completed
+     (Self      : in out Formatter;
+      Features  : Natural;
+      Scenarios : Count_Array;
+      Steps     : Count_Array;
+      Elapsed   : Duration);
    --  Called when all features have been full run.
    --  This can be used to display summaries
 
@@ -91,7 +98,12 @@ package BDD.Formatters is
    overriding procedure Scenario_Completed
      (Self     : in out Formatter_Dots;
       Scenario : BDD.Features.Scenario);
-   overriding procedure All_Features_Completed (Self : in out Formatter_Dots);
+   overriding procedure All_Features_Completed
+     (Self      : in out Formatter_Dots;
+      Features  : Natural;
+      Scenarios : Count_Array;
+      Steps     : Count_Array;
+      Elapsed   : Duration);
 
    -----------
    -- Quiet --

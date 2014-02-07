@@ -88,14 +88,43 @@ package body BDD.Runner is
    is
    begin
       if Self.Files /= null then
+         Self.Run_Start;
          Self.Format := Format;
          Sort (Self.Files.all);
          for F in Self.Files'Range loop
             Parser.Parse (Self.Files (F), Self);
          end loop;
+
+         Self.Run_End;
          Self.Format := null;
       end if;
    end Run;
+
+   ---------------
+   -- Run_Start --
+   ---------------
+
+   procedure Run_Start (Self : in out Feature_Runner) is
+   begin
+      Self.Steps_Stats := (others => 0);
+      Self.Scenario_Stats := (others => 0);
+      Self.Features_Count := 0;
+      Self.Current_Feature_Id := -1;
+      Self.Start := Ada.Calendar.Clock;
+   end Run_Start;
+
+   -------------
+   -- Run_End --
+   -------------
+
+   procedure Run_End (Self : in out Feature_Runner) is
+   begin
+      Self.Format.All_Features_Completed
+        (Features  => Self.Features_Count,
+         Scenarios => Self.Scenario_Stats,
+         Steps     => Self.Steps_Stats,
+         Elapsed   => Ada.Calendar.Clock - Self.Start);
+   end Run_End;
 
    ------------------
    -- Scenario_End --
@@ -124,6 +153,8 @@ package body BDD.Runner is
                   S.Set_Status (Status_Passed);
                end if;
 
+               Self.Steps_Stats (S.Status) := Self.Steps_Stats (S.Status) + 1;
+
                Scenario.Set_Status (S.Status);
 
             when Status_Failed | Status_Skipped | Status_Undefined =>
@@ -139,6 +170,14 @@ package body BDD.Runner is
          Self.Format.Scenario_Start (Scenario);
          Scenario.Foreach_Step (Run_Step'Access);
          Self.Format.Scenario_Completed (Scenario);
+
+         Self.Scenario_Stats (Scenario.Status) :=
+           Self.Scenario_Stats (Scenario.Status) + 1;
+
+         if Scenario.Get_Feature.Id /= Self.Current_Feature_Id then
+            Self.Features_Count := Self.Features_Count + 1;
+            Self.Current_Feature_Id := Scenario.Get_Feature.Id;
+         end if;
       end if;
    end Scenario_End;
 

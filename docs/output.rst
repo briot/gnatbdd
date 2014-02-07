@@ -64,8 +64,10 @@ switches:
 
   GNATbdd displays a "." for each test that passes, a "F" for each
   test that fails (and will then display a full backtrace for those)
-  and a "S" for skipped tests (and will also display more information
-  for those).
+  and a "S" for skipped tests.
+ 
+  When all features have run, GNATbdd displays details for all tests
+  that did not pass.
 
   Finally, it displays a summary for the final count for each category.
 
@@ -96,6 +98,8 @@ switches:
   pass or fail. The output looks like the above, but instead of displaying
   a ".", GNATbdd outputs the full lists of steps for that scenario.
 
+  In this mode, GNATbdd outputs each step before it is being run, thus this
+  allows you to monitor which step is taking long to execute.
 
 Log files
 =========

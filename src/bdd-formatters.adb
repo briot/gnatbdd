@@ -279,6 +279,95 @@ package body BDD.Formatters is
       end if;
    end Display_Step;
 
+   ----------------------------
+   -- All_Features_Completed --
+   ----------------------------
+
+   procedure All_Features_Completed
+     (Self      : in out Formatter;
+      Features  : Natural;
+      Scenarios : Count_Array;
+      Steps     : Count_Array;
+      Elapsed   : Duration)
+   is
+      procedure Put_Stats (Total : Natural; Stats : Count_Array);
+      --  Display the stats
+
+      procedure Put_Stats (Total : Natural; Stats : Count_Array) is
+         Is_First : Boolean := True;
+      begin
+         if Total /= 0 then
+            Put (" (");
+
+            for S in Stats'Range loop
+               if Stats (S) /= 0 then
+                  if not Is_First then
+                     Put (", ");
+                  end if;
+                  Is_First := False;
+
+                  Self.Term.Set_Color
+                    (Term       => Ada.Text_IO.Standard_Output,
+                     Foreground => BDD.Step_Colors (S));
+
+                  Put (Image (Stats (S), 1));
+                  Put (" ");
+
+                  case S is
+                     when Status_Passed    => Put ("passed");
+                     when Status_Failed    => Put ("failed");
+                     when Status_Skipped   => Put ("skipped");
+                     when Status_Undefined => Put ("undefined");
+                  end case;
+
+                  Self.Term.Set_Color
+                    (Term       => Ada.Text_IO.Standard_Output,
+                     Style      => Reset_All);
+               end if;
+            end loop;
+
+            Put (")");
+         end if;
+         New_Line;
+      end Put_Stats;
+
+      Sc_Count : Natural := 0;
+      St_Count : Natural := 0;
+      Minutes  : Natural;
+      Seconds  : Duration;
+
+   begin
+      Clear_Progress (Self);
+
+      for S in Scenarios'Range loop
+         Sc_Count := Sc_Count + Scenarios (S);
+      end loop;
+
+      for S in Steps'Range loop
+         St_Count := St_Count + Steps (S);
+      end loop;
+
+      New_Line;
+
+      Put_Line (Image (Features, 1) & " features");
+
+      Put (Image (Sc_Count, 1) & " scenarios");
+      Put_Stats (Sc_Count, Scenarios);
+
+      Put (Image (St_Count, 1) & " steps");
+      Put_Stats (St_Count, Steps);
+
+      Minutes := Integer (Elapsed / 60.0);
+      Seconds := Elapsed - Duration (Minutes) * 60.0;
+
+      declare
+         S : constant String := Seconds'Img;
+      begin
+         Put_Line
+           (Image (Minutes, 1) & "m" & S (S'First + 1 .. S'First + 5) & "s");
+      end;
+   end All_Features_Completed;
+
    --------------------
    -- Scenario_Start --
    --------------------
@@ -350,17 +439,25 @@ package body BDD.Formatters is
    ----------------------------
 
    overriding procedure All_Features_Completed
-     (Self : in out Formatter_Dots)
+     (Self      : in out Formatter_Dots;
+      Features  : Natural;
+      Scenarios : Count_Array;
+      Steps     : Count_Array;
+      Elapsed   : Duration)
    is
    begin
+      Clear_Progress (Self);
+
       if Self.Failed.Length /= 0 then
-         New_Line;
          New_Line;
          for S of Self.Failed loop
             Display_Scenario_And_Steps (Self, S);
          end loop;
          Self.Failed.Clear;
       end if;
+
+      All_Features_Completed   --  inherited
+        (Formatter (Self), Features, Scenarios, Steps, Elapsed);
    end All_Features_Completed;
 
    --------------------

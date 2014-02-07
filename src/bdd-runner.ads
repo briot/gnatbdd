@@ -23,6 +23,7 @@
 
 --  Manipulating features files
 
+with Ada.Calendar;    use Ada.Calendar;
 with BDD.Features;    use BDD.Features;
 with BDD.Formatters;  use BDD.Formatters;
 with BDD.Parser;      use BDD.Parser;
@@ -63,6 +64,12 @@ package BDD.Runner is
    --  scenarios are run in the order they were defined in in the features
    --  file.
 
+   procedure Run_Start (Self : in out Feature_Runner);
+   --  Called before the first feature is run
+
+   procedure Run_End (Self : in out Feature_Runner);
+   --  Called after the last feature has been run.
+
    overriding procedure Scenario_End
      (Self     : in out Feature_Runner;
       Scenario : BDD.Features.Scenario);
@@ -71,6 +78,13 @@ private
    type Feature_Runner is new BDD.Parser.Abstract_Feature_Runner with record
       Files  : GNATCOLL.VFS.File_Array_Access;
       Format : access BDD.Formatters.Formatter'Class;
+
+      Steps_Stats        : Count_Array := (others => 0);
+      Scenario_Stats     : Count_Array := (others => 0);
+      Features_Count     : Natural := 0;
+      Current_Feature_Id : Integer := -1;
+
+      Start : Ada.Calendar.Time;
    end record;
 
 end BDD.Runner;

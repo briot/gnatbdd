@@ -49,9 +49,11 @@ package BDD.Parser is
    --  none of its steps.
 
    procedure Scenario_End
-     (Self     : in out Abstract_Feature_Runner;
-      Scenario : BDD.Features.Scenario) is null;
+     (Self       : in out Abstract_Feature_Runner;
+      Background : BDD.Features.Scenario;
+      Scenario   : BDD.Features.Scenario) is null;
    --  Called when the last step in a scenario has been seen.
+   --  Background contains extra steps to run the scenario's own steps
 
    procedure Feature_End
      (Self     : in out Abstract_Feature_Runner;

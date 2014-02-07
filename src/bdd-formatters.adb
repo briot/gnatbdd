@@ -94,7 +94,9 @@ package body BDD.Formatters is
    function Scenario_Name (Scenario : BDD.Features.Scenario) return String is
    begin
       return +Scenario.Get_Feature.File.Relative_Path (Features_Directory)
-        & "#" & Image (Scenario.Index, 1)
+        & (if Scenario.Index /= Positive'Last
+           then "#" & Image (Scenario.Index, 1)
+           else "")
         & ":" & Image (Scenario.Line, 1);
    end Scenario_Name;
 
@@ -107,11 +109,13 @@ package body BDD.Formatters is
       Scenario : BDD.Features.Scenario)
    is
       procedure Show_Step
-        (Step : not null access BDD.Features.Step_Record'Class);
+        (Scenario : BDD.Features.Scenario;
+         Step     : not null access BDD.Features.Step_Record'Class);
       --  Display a step for a scenario
 
       procedure Show_Step
-        (Step : not null access BDD.Features.Step_Record'Class) is
+        (Scenario : BDD.Features.Scenario;
+         Step     : not null access BDD.Features.Step_Record'Class) is
       begin
          Display_Step (Self, Scenario, Step);
       end Show_Step;
@@ -241,7 +245,7 @@ package body BDD.Formatters is
       end if;
 
       Put_And_Align
-        (Scenario, Scenario_Indent & Cst_Scenario & ' ' & Scenario.Name);
+        (Scenario, Scenario_Indent & Scenario.Prefix & ' ' & Scenario.Name);
       Display_Location (Self, Scenario);
    end Display_Scenario_Header;
 

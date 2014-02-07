@@ -213,11 +213,12 @@ package body BDD.Features is
    procedure Foreach_Step
      (Self : Scenario;
       Callback : not null access procedure
-        (S : not null access Step_Record'Class))
+        (Scenario : BDD.Features.Scenario;
+         Step     : not null access Step_Record'Class))
    is
    begin
       for S of Self.Get.Steps loop
-         Callback (S);
+         Callback (Self, S);
       end loop;
    end Foreach_Step;
 
@@ -393,5 +394,18 @@ package body BDD.Features is
    begin
       return Self.Status;
    end Status;
+
+   ------------
+   -- Prefix --
+   ------------
+
+   function Prefix (Self : Scenario) return String is
+   begin
+      case Self.Get.Kind is
+         when Kind_Scenario   => return Cst_Scenario;
+         when Kind_Background => return Cst_Background;
+         when Kind_Outline    => return Cst_Scenario_Outline;
+      end case;
+   end Prefix;
 
 end BDD.Features;

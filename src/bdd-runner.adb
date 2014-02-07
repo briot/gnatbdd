@@ -131,42 +131,74 @@ package body BDD.Runner is
    ------------------
 
    overriding procedure Scenario_End
-     (Self     : in out Feature_Runner;
-      Scenario : BDD.Features.Scenario)
+     (Self       : in out Feature_Runner;
+      Background : BDD.Features.Scenario;
+      Scenario   : BDD.Features.Scenario)
    is
-      procedure Run_Step (S : not null access Step_Record'Class);
+      Show_Steps : Boolean;
+
+      procedure Run_Step
+        (Scenario : BDD.Features.Scenario;
+         Step     : not null access Step_Record'Class);
       --  Run a specific step of the scenario
 
-      procedure Run_Step (S : not null access Step_Record'Class) is
+      procedure Run_Step
+        (Scenario : BDD.Features.Scenario;
+         Step     : not null access Step_Record'Class) is
       begin
          case Scenario.Status is
             when Status_Passed =>
                --  ??? Simulate a run
                delay 0.2;
-               if Scenario.Line = 5 then
-                  S.Set_Status (Status_Passed);
-               elsif Scenario.Line = 10 then
-                  S.Set_Status (Status_Failed);
-               elsif Scenario.Line = 11 then
-                  S.Set_Status (Status_Undefined);
+               if Step.Line >= 25 and then Step.Line <= 26 then
+                  Step.Set_Status (Status_Passed);
+               elsif Step.Line = 47 then
+                  Step.Set_Status (Status_Failed);
+               elsif Step.Line = 13 then
+                  Step.Set_Status (Status_Undefined);
+               elsif Step.Line = 7 then
+                  Step.Set_Status (Status_Passed);
                else
-                  S.Set_Status (Status_Passed);
+                  Step.Set_Status (Status_Passed);
                end if;
 
-               Self.Steps_Stats (S.Status) := Self.Steps_Stats (S.Status) + 1;
-
-               Scenario.Set_Status (S.Status);
+               Self.Steps_Stats (Step.Status) :=
+                 Self.Steps_Stats (Step.Status) + 1;
+               Scenario.Set_Status (Step.Status);
 
             when Status_Failed | Status_Skipped | Status_Undefined =>
-               S.Set_Status (Status_Skipped);
+               Step.Set_Status (Status_Skipped);
          end case;
 
-         Self.Format.Step_Completed (Scenario, S);
+         if Show_Steps then
+            Self.Format.Step_Completed (Scenario, Step);
+         end if;
       end Run_Step;
 
    begin
       if Scenario.Kind = Kind_Scenario then
          Scenario.Set_Status (Status_Passed);
+
+         if Background /= No_Scenario then
+            Show_Steps := Scenario.Get_Feature.Id /= Self.Current_Feature_Id;
+            Background.Set_Status (Status_Passed);
+
+            if Show_Steps then
+               Self.Format.Scenario_Start (Background);
+               Background.Foreach_Step (Run_Step'Access);
+               Self.Format.Scenario_Completed (Background);
+            else
+               Background.Foreach_Step (Run_Step'Access);
+            end if;
+
+            if Background.Status = Status_Passed then
+               Scenario.Set_Status (Status_Passed);
+            else
+               Scenario.Set_Status (Status_Skipped);
+            end if;
+         end if;
+
+         Show_Steps := True;
          Self.Format.Scenario_Start (Scenario);
          Scenario.Foreach_Step (Run_Step'Access);
          Self.Format.Scenario_Completed (Scenario);

@@ -39,11 +39,13 @@ package body BDD.Parser is
       pragma Unreferenced (Self);
       type State_Type is (None, In_Feature,
                           In_Scenario,
+                          In_Background,
                           In_String,
                           In_Outline, In_Examples);
-      State  : State_Type := None;
-      F      : BDD.Features.Feature := No_Feature;
-      Scenar : BDD.Features.Scenario := No_Scenario;
+      State      : State_Type := None;
+      F          : BDD.Features.Feature := No_Feature;
+      Scenar     : BDD.Features.Scenario := No_Scenario;
+      Background : BDD.Features.Scenario := No_Scenario;
       Step   : BDD.Features.Step;
       Buffer : GNAT.Strings.String_Access := File.Read_File;
       Index  : Integer := Buffer'First;
@@ -68,9 +70,14 @@ package body BDD.Parser is
       procedure Finish_Scenario is
       begin
          case State is
+            when In_Background =>
+               Step := null;
+               Runner.Scenario_End (No_Scenario, Background);
+               State := In_Feature;
+
             when In_Scenario | In_Outline | In_Examples =>
                Step := null;
-               Runner.Scenario_End (Scenar);
+               Runner.Scenario_End (Background, Scenar);
                Scenar := No_Scenario;
                State := In_Feature;
 
@@ -89,6 +96,8 @@ package body BDD.Parser is
          if State /= None then
             Runner.Feature_End (F);
             F := No_Feature;
+            Scenar := No_Scenario;
+            Background := No_Scenario;
          end if;
 
          State := None;
@@ -126,7 +135,8 @@ package body BDD.Parser is
 
          if Active (Me) then
             Trace (Me, "Line " & Image (Line, 3, Padding => ' ')
-                   & " " & Buffer (Line_S .. Line_E));
+                   & " " & Buffer (Line_S .. Line_E)
+                   & " " & State'Img);
          end if;
 
          First_Char := Line_S;
@@ -134,7 +144,11 @@ package body BDD.Parser is
 
          if Starts_With (Buffer (First_Char .. Line_E), """""""") then
             if State = In_String then
-               State := In_Scenario;
+               if Scenar /= No_Scenario then
+                  State := In_Scenario;
+               else
+                  State := In_Background;
+               end if;
             elsif Step /= null then
                State := In_String;
                String_Indent := First_Char - Line_S + 1;
@@ -161,7 +175,7 @@ package body BDD.Parser is
 
          elsif Buffer (First_Char) = '|' then
             case State is
-               when In_Scenario | In_Outline =>
+               when In_Background | In_Scenario | In_Outline =>
                   if Step /= null then
                      Trace (Me, "MANU Table=" & Buffer (First_Char .. Line_E));
                   else
@@ -210,16 +224,23 @@ package body BDD.Parser is
                  & Image (Line, 1);
             end if;
 
+            if Background /= No_Scenario then
+               raise Syntax_Error with
+                 "A single Background can be defined, at "
+                 & File.Display_Full_Name & ":"
+                 & Image (Line, 1);
+            end if;
+
             Finish_Scenario;
 
-            Scenar := Create
+            Background := Create
               (Feature => F,
                Name    => Get_Line_End (First_Char + Cst_Background'Length),
                Kind    => Kind_Background,
                Line    => Line,
                Index   => Positive'Last);
-            Runner.Scenario_Start (Scenar);
-            State := In_Scenario;
+            Runner.Scenario_Start (Background);
+            State := In_Background;
 
          elsif Starts_With (Buffer (First_Char .. Line_E), Cst_Scenario) then
             if State = None then
@@ -283,8 +304,8 @@ package body BDD.Parser is
            or else Starts_With (Buffer (First_Char .. Line_E), Cst_But)
            or else Starts_With (Buffer (First_Char .. Line_E), Cst_When)
          then
-            if Scenar = No_Scenario then
-               raise Syntax_Error with "Step must be defined with in a"
+            if State = In_Feature then
+               raise Syntax_Error with "Step must be defined within a"
                  & " Scenario at " & File.Display_Full_Name & ":"
                  & Image (Line, 1);
             end if;
@@ -292,7 +313,12 @@ package body BDD.Parser is
             Step := Create
               (Text => Buffer (First_Char .. Line_E),
                Line => Line);
-            Scenar.Add (Step);
+
+            if State = In_Scenario then
+               Scenar.Add (Step);
+            else
+               Background.Add (Step);
+            end if;
 
          else
             if State = None then
@@ -304,6 +330,7 @@ package body BDD.Parser is
                F.Add_To_Description (Buffer (First_Char .. Line_E));
 
             elsif State = In_Scenario
+              or else State = In_Background
               or else State = In_Outline
             then
                raise Syntax_Error with

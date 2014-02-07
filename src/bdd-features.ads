@@ -118,13 +118,17 @@ package BDD.Features is
    function Get_Feature (Self : Scenario) return Feature'Class;
    --  Retrieve the attributes of Self
 
+   function Prefix (Self : Scenario) return String;
+   --  Return the "Scenario:", "Background:",... prefix to use for Self
+
    procedure Add (Self : Scenario; S : not null access Step_Record'Class);
    --  Add a new step
 
    procedure Foreach_Step
      (Self     : Scenario;
       Callback : not null access procedure
-        (S : not null access Step_Record'Class));
+        (Scenario : BDD.Features.Scenario;
+         Step     : not null access Step_Record'Class));
    --  Iterate over each step
 
    procedure Set_Status (Self : Scenario; Status : BDD.Scenario_Status);

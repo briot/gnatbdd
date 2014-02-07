@@ -71,8 +71,9 @@ package BDD.Runner is
    --  Called after the last feature has been run.
 
    overriding procedure Scenario_End
-     (Self     : in out Feature_Runner;
-      Scenario : BDD.Features.Scenario);
+     (Self       : in out Feature_Runner;
+      Background : BDD.Features.Scenario;
+      Scenario   : BDD.Features.Scenario);
 
 private
    type Feature_Runner is new BDD.Parser.Abstract_Feature_Runner with record

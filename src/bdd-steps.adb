@@ -56,22 +56,27 @@ package body BDD.Steps is
    -- Run_Step --
    --------------
 
-   function Run_Step (Step : String) return Scenario_Status is
-      Matches : Match_Array (0 .. 20);
+   procedure Run_Step
+     (Step : not null access BDD.Features.Step_Record'Class)
+   is
+      Text : constant String := Step.Text;
+      Matches : Match_Array (0 .. 10);
    begin
-      Match (Re_1, Step, Matches);
+      Match (Re_1, Text, Matches);
       if Matches (0) /= No_Match then
-         Do_Step_1 (Name => Step (Matches (1).First .. Matches (1).Last));
-         return Status_Passed;
+         Step.Set_Match_Info (Matches);
+         Do_Step_1 (Name => Text (Matches (1).First .. Matches (1).Last));
+         return;
       end if;
 
-      Match (Re_2, Step, Matches);
+      Match (Re_2, Text, Matches);
       if Matches (0) /= No_Match then
+         Step.Set_Match_Info (Matches);
          Do_Step_2;
-         return Status_Passed;
+         return;
       end if;
 
-      return Status_Undefined;
+      Step.Set_Status (Status_Undefined);
    end Run_Step;
 
 end BDD.Steps;

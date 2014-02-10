@@ -44,7 +44,7 @@ Syntax of the features file
 
 The syntax of the features file is based on the one from Cucumber, which is
 a BDD standard tool in the Ruby world. The grammar and syntax in those files
-is voluntarily information, since they are meant to be editable and readable
+is voluntarily informal, since they are meant to be editable and readable
 by people other than software developers.
 
 As a result, this documentation is mostly based on examples. Let's start

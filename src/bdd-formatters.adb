@@ -25,6 +25,7 @@ with Ada.Containers; use Ada.Containers;
 with Ada.Text_IO;    use Ada.Text_IO;
 with BDD.Tables;     use BDD.Tables;
 with GNATCOLL.Utils; use GNATCOLL.Utils;
+with GNAT.Regpat;    use GNAT.Regpat;
 
 package body BDD.Formatters is
 
@@ -66,9 +67,9 @@ package body BDD.Formatters is
    --  Display the name of the scenario being run, if supported by the
    --  terminal
 
-   procedure Put_And_Align
+   function Text_And_Align
      (Scenario : BDD.Features.Scenario;
-      Text     : String);
+      Text     : String) return String;
    --  Display text (assuming at the beginning of a line), and adds trailing
    --  spaces so that the cursor is left aligned at a column suitable for
    --  displaying the location.
@@ -169,19 +170,18 @@ package body BDD.Formatters is
       New_Line;
    end Display_Location;
 
-   -------------------
-   -- Put_And_Align --
-   -------------------
+   --------------------
+   -- Text_And_Align --
+   --------------------
 
-   procedure Put_And_Align
+   function Text_And_Align
      (Scenario : BDD.Features.Scenario;
-      Text     : String)
+      Text     : String) return String
    is
       Long : constant Natural := Scenario.Longuest_Step + Step_Indent'Length;
    begin
-      Put (Text);
-      Put ((1 .. 1 + Long - Text'Length => ' '));
-   end Put_And_Align;
+      return Text & (1 .. 1 + Long - Text'Length => ' ');
+   end Text_And_Align;
 
    ----------------------
    -- Display_Progress --
@@ -245,8 +245,9 @@ package body BDD.Formatters is
          Self.Last_Displayed_Feature_Id := F.Id;
       end if;
 
-      Put_And_Align
-        (Scenario, Scenario_Indent & Scenario.Prefix & ' ' & Scenario.Name);
+      Put (Text_And_Align
+           (Scenario,
+              Scenario_Indent & Scenario.Prefix & ' ' & Scenario.Name));
       Display_Location (Self, Scenario);
    end Display_Scenario_Header;
 
@@ -278,11 +279,57 @@ package body BDD.Formatters is
          end loop;
       end Indent;
 
+      Info : constant Match_Array := Step.Match_Info;
    begin
-      Self.Term.Set_Color
-        (Term       => Ada.Text_IO.Standard_Output,
-         Foreground => BDD.Step_Colors (Step.Status));
-      Put_And_Align (Scenario, Step_Indent & Step.Text);
+      if Self.Term.Has_Colors then
+         declare
+            N          : constant String :=
+              Text_And_Align (Scenario, Step_Indent & Step.Text);
+            H          :
+              array (Step_Indent'Length + 1 .. N'Length) of Boolean :=
+              (others => False);
+            First, Last : Integer;
+         begin
+            for M in 1 .. Info'Last loop
+               if Info (M) /= No_Match then
+                  H (Info (M).First + Step_Indent'Length ..
+                       Info (M).Last + Step_Indent'Length) :=
+                    (others => True);
+               end if;
+            end loop;
+
+            First := N'First + Step_Indent'Length;
+            Put (N (N'First .. First - 1));  --  indentation
+
+            while First <= N'Last loop
+               Last := First;
+               while Last <= N'Last and then not H (Last) loop
+                  Last := Last + 1;
+               end loop;
+               if First <= Last - 1 then
+                  Self.Term.Set_Color
+                    (Term       => Ada.Text_IO.Standard_Output,
+                     Foreground => BDD.Step_Colors (Step.Status));
+                  Put (N (First .. Last - 1));
+               end if;
+
+               First := Last;
+               while First <= N'Last and then H (First) loop
+                  First := First + 1;
+               end loop;
+
+               if Last <= First - 1 then
+                  Self.Term.Set_Color
+                    (Term       => Ada.Text_IO.Standard_Output,
+                     Foreground => BDD.Config_Color);
+                  Put (N (Last .. First - 1));
+               end if;
+            end loop;
+         end;
+
+      else
+         Put (Text_And_Align (Scenario, Step_Indent & Step.Text));
+      end if;
 
       if Self.Term.Has_Colors then
          Display_Location (Self, Scenario, Step);

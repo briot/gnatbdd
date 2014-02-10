@@ -72,6 +72,10 @@ package BDD is
       Status_Skipped   => GNATCOLL.Terminal.Cyan);
    --  Mapping status to colors in the output
 
+   Config_Color : constant GNATCOLL.Terminal.ANSI_Color :=
+     GNATCOLL.Terminal.Blue;
+   --  Color used to highlight the parenthesis groups in steps
+
    procedure Command_Line_Switches;
    --  Handles the command line switches
 

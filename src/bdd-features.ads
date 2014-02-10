@@ -27,6 +27,7 @@ with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with BDD.Tables;            use BDD.Tables;
 with GNATCOLL.Refcount;     use GNATCOLL.Refcount;
+with GNAT.Regpat;           use GNAT.Regpat;
 
 package BDD.Features is
 
@@ -67,6 +68,14 @@ package BDD.Features is
      (Self   : not null access Step_Record) return BDD.Scenario_Status;
    function Error_Msg (Self : not null access Step_Record) return String;
    --  Set the status for a specific step
+
+   procedure Set_Match_Info
+     (Self  : not null access Step_Record;
+      Match : GNAT.Regpat.Match_Array);
+   function Match_Info
+     (Self : not null access Step_Record) return GNAT.Regpat.Match_Array;
+   --  Set the information about what part of the step's text matches the
+   --  regexp.
 
    -------------
    -- Feature --
@@ -147,6 +156,8 @@ package BDD.Features is
    --  The length of the longuest step (for display purposes)
 
 private
+   type Match_Array_Access is access GNAT.Regpat.Match_Array;
+
    type Step_Record is tagged record
       Line      : Positive;
       Text      : Ada.Strings.Unbounded.Unbounded_String;
@@ -154,6 +165,7 @@ private
       Error_Msg : Ada.Strings.Unbounded.Unbounded_String;
       Status    : BDD.Scenario_Status;
       Table     : BDD.Tables.Table;
+      Match     : Match_Array_Access;
    end record;
 
    package Step_Lists is new Ada.Containers.Doubly_Linked_Lists (Step);

@@ -24,10 +24,12 @@
 --  This package provides support for matching steps with actual subprograms
 --  registered by the user
 
+with BDD.Features;     use BDD.Features;
+
 package BDD.Steps is
 
-   function Run_Step (Step : String) return Scenario_Status;
-   --  Run a step.
+   procedure Run_Step (Step : not null access BDD.Features.Step_Record'Class);
+   --  Run a step, and sets its status
    --  This procedure is expected to raise exceptions when a test fails.
 
 end BDD.Steps;

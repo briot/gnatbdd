@@ -28,6 +28,9 @@ with GNATCOLL.Traces;            use GNATCOLL.Traces;
 package body BDD.Features is
    Me : constant Trace_Handle := Create ("BDD.FEATURES");
 
+   procedure Unchecked_Free is new Ada.Unchecked_Deallocation
+     (Match_Array, Match_Array_Access);
+
    protected type Ids is
       procedure Get_Next (Id : out Integer);
       --  Get the next unique id
@@ -343,6 +346,10 @@ package body BDD.Features is
       Trace (Me, "Free step at line" & Self.Line'Img);
       Self.Text      := Null_Unbounded_String;
       Self.Multiline := Null_Unbounded_String;
+      Self.Error_Msg := Null_Unbounded_String;
+      Self.Status    := Status_Passed;
+      Self.Table     := No_Table;
+      Unchecked_Free (Self.Match);
       Self.Line      := 1;
    end Free;
 
@@ -444,5 +451,33 @@ package body BDD.Features is
    begin
       return Self.Table;
    end Table;
+
+   --------------------
+   -- Set_Match_Info --
+   --------------------
+
+   procedure Set_Match_Info
+     (Self  : not null access Step_Record;
+      Match : GNAT.Regpat.Match_Array)
+   is
+   begin
+      Unchecked_Free (Self.Match);
+      Self.Match := new Match_Array'(Match);
+   end Set_Match_Info;
+
+   ----------------
+   -- Match_Info --
+   ----------------
+
+   function Match_Info
+     (Self : not null access Step_Record) return GNAT.Regpat.Match_Array
+   is
+   begin
+      if Self.Match /= null then
+         return Self.Match.all;
+      else
+         return Match_Array'(1 .. 0 => No_Match);
+      end if;
+   end Match_Info;
 
 end BDD.Features;

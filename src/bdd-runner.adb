@@ -147,23 +147,19 @@ package body BDD.Runner is
 
       procedure Run_Step
         (Scenario : BDD.Features.Scenario;
-         Step     : not null access Step_Record'Class)
-      is
-         Status : Scenario_Status;
+         Step     : not null access Step_Record'Class) is
       begin
          case Scenario.Status is
             when Status_Passed =>
                Step.Set_Status (Status_Passed);
 
                begin
-                  Status := BDD.Steps.Run_Step (Step.Text);
+                  BDD.Steps.Run_Step (Step);
 
---                    if Status = Status_Undefined then
+--                    if Step.Status = Status_Undefined then
 --                       --  ??? Could run some predefined steps here
 --                       null;
 --                    end if;
-
-                  Step.Set_Status (Status);
 
                exception
                   when E : others =>

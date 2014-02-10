@@ -29,9 +29,12 @@ package body BDD.Steps is
      ("^Given a user named '(.*)'$");
    Re_2 : constant Pattern_Matcher := Compile
      ("^Given I am sitting at my desk$");
+   Re_3 : constant Pattern_Matcher := Compile
+     ("^Then I should create great software$");
 
    procedure Do_Step_1 (Name : String);
    procedure Do_Step_2;
+   procedure Do_Step_3;
 
    ---------------
    -- Do_Step_1 --
@@ -52,12 +55,22 @@ package body BDD.Steps is
       raise Constraint_Error;
    end Do_Step_2;
 
+   ---------------
+   -- Do_Step_3 --
+   ---------------
+
+   procedure Do_Step_3 is
+   begin
+      raise Constraint_Error;
+   end Do_Step_3;
+
    --------------
    -- Run_Step --
    --------------
 
    procedure Run_Step
-     (Step : not null access BDD.Features.Step_Record'Class)
+     (Step    : not null access BDD.Features.Step_Record'Class;
+      Execute : Boolean)
    is
       Text : constant String := Step.Text;
       Matches : Match_Array (0 .. 10);
@@ -65,14 +78,27 @@ package body BDD.Steps is
       Match (Re_1, Text, Matches);
       if Matches (0) /= No_Match then
          Step.Set_Match_Info (Matches);
-         Do_Step_1 (Name => Text (Matches (1).First .. Matches (1).Last));
+         if Execute then
+            Do_Step_1 (Name => Text (Matches (1).First .. Matches (1).Last));
+         end if;
          return;
       end if;
 
       Match (Re_2, Text, Matches);
       if Matches (0) /= No_Match then
          Step.Set_Match_Info (Matches);
-         Do_Step_2;
+         if Execute then
+            Do_Step_2;
+         end if;
+         return;
+      end if;
+
+      Match (Re_3, Text, Matches);
+      if Matches (0) /= No_Match then
+         Step.Set_Match_Info (Matches);
+         if Execute then
+            Do_Step_3;
+         end if;
          return;
       end if;
 

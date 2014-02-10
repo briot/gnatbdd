@@ -147,36 +147,38 @@ package body BDD.Runner is
 
       procedure Run_Step
         (Scenario : BDD.Features.Scenario;
-         Step     : not null access Step_Record'Class) is
+         Step     : not null access Step_Record'Class)
+      is
+         Execute : constant Boolean := Scenario.Status = Status_Passed;
       begin
-         case Scenario.Status is
-            when Status_Passed =>
-               Step.Set_Status (Status_Passed);
+         --  Run the step, or at least check whether it is defined.
+         if Execute then
+            Step.Set_Status (Status_Passed);
+         else
+            Step.Set_Status (Status_Skipped);
+         end if;
 
-               begin
-                  BDD.Steps.Run_Step (Step);
+         begin
+            --  Will set status to undefined if necessary
+            BDD.Steps.Run_Step (Step, Execute => Execute);
+            --   if Step.Status = Status_Undefined then
+            --      --  ??? Could run some predefined steps here
+            --      null;
+            --   end if;
 
---                    if Step.Status = Status_Undefined then
---                       --  ??? Could run some predefined steps here
---                       null;
---                    end if;
+         exception
+            when E : others =>
+               Step.Set_Status (Status_Failed, Exception_Information (E));
+         end;
 
-               exception
-                  when E : others =>
-                     Step.Set_Status
-                       (Status_Failed, Exception_Information (E));
-               end;
+         if Execute then
+            if Show_Steps then
+               Self.Steps_Stats (Step.Status) :=
+                 Self.Steps_Stats (Step.Status) + 1;
+            end if;
 
-               if Show_Steps then
-                  Self.Steps_Stats (Step.Status) :=
-                    Self.Steps_Stats (Step.Status) + 1;
-               end if;
-
-               Scenario.Set_Status (Step.Status);
-
-            when Status_Failed | Status_Skipped | Status_Undefined =>
-               Step.Set_Status (Status_Skipped);
-         end case;
+            Scenario.Set_Status (Step.Status);
+         end if;
 
          if Show_Steps then
             Self.Format.Step_Completed (Scenario, Step);

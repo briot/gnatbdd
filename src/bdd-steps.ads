@@ -28,8 +28,12 @@ with BDD.Features;     use BDD.Features;
 
 package BDD.Steps is
 
-   procedure Run_Step (Step : not null access BDD.Features.Step_Record'Class);
-   --  Run a step, and sets its status
+   procedure Run_Step
+     (Step    : not null access BDD.Features.Step_Record'Class;
+      Execute : Boolean);
+   --  Run a step, and sets its status.
+   --  If Execute is False, then we only check whether the step is known, but
+   --  it is not run. No exception is raised in this mode.
    --  This procedure is expected to raise exceptions when a test fails.
 
 end BDD.Steps;

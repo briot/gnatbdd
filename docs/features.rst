@@ -35,9 +35,16 @@ GNATbdd will always search recursively in those directories. This lets you
 organize the files into subdirectories when you have several of them, and
 thus perhaps make it easier to refer to them.
 
-GNATbdd will always run the features file in alphabetical order on the full
-path of the feature file). This provides a more consistent output when
+GNATbdd will run the features file in alphabetical order of the full path of
+the feature file, by default. This provides a more consistent output when
 GNATbdd is run multiple times.
+
+.. index:: switches; --random
+
+However, by using the :option:`--random` switch, the order of features is
+randomized. This is a convenient way to check that the various tests are indeed
+independent of each other, as they should be to make it possible to run tests
+individually.
 
 Syntax of the features file
 ===========================

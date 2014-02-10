@@ -23,6 +23,7 @@
 
 with Ada.Exceptions; use Ada.Exceptions;
 with BDD.Steps;      use BDD.Steps;
+with GNATCOLL.Utils; use GNATCOLL.Utils;
 
 package body BDD.Runner is
 
@@ -150,6 +151,9 @@ package body BDD.Runner is
          Step     : not null access Step_Record'Class)
       is
          Execute : constant Boolean := Scenario.Status = Status_Passed;
+         Text    : constant String := Step.Text;
+         First   : Integer := Text'First;
+
       begin
          --  Run the step, or at least check whether it is defined.
          if Execute then
@@ -158,9 +162,20 @@ package body BDD.Runner is
             Step.Set_Status (Status_Skipped);
          end if;
 
+         --  Skip the leading 'Given|Then|...' keywords, which are irrelevant
+         --  for the purpose of the match
+
+         while First <= Text'Last
+           and then not Is_Whitespace (Text (First))
+         loop
+            First := First + 1;
+         end loop;
+         Skip_Blanks (Text, First);
+
          begin
             --  Will set status to undefined if necessary
-            BDD.Steps.Run_Step (Step, Execute => Execute);
+            BDD.Steps.Run_Step
+              (Step, Text (First .. Text'Last), Execute => Execute);
             --   if Step.Status = Status_Undefined then
             --      --  ??? Could run some predefined steps here
             --      null;

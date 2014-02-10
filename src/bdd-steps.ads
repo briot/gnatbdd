@@ -30,10 +30,15 @@ package BDD.Steps is
 
    procedure Run_Step
      (Step    : not null access BDD.Features.Step_Record'Class;
+      Text    : String;
       Execute : Boolean);
    --  Run a step, and sets its status.
+   --
    --  If Execute is False, then we only check whether the step is known, but
    --  it is not run. No exception is raised in this mode.
+   --
+   --  Text must be Step.Text, minus the leading 'Given|Then|...' words.
+   --
    --  This procedure is expected to raise exceptions when a test fails.
 
 end BDD.Steps;

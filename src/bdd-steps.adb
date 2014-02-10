@@ -26,11 +26,11 @@ with GNAT.Regpat;   use GNAT.Regpat;
 package body BDD.Steps is
 
    Re_1 : constant Pattern_Matcher := Compile
-     ("^Given a user named '(.*)'$");
+     ("^a user named '(.*)'$");
    Re_2 : constant Pattern_Matcher := Compile
-     ("^Given I am sitting at my desk$");
+     ("^I am sitting at my desk$");
    Re_3 : constant Pattern_Matcher := Compile
-     ("^Then I should create great software$");
+     ("^I should create great software$");
 
    procedure Do_Step_1 (Name : String);
    procedure Do_Step_2;
@@ -70,9 +70,9 @@ package body BDD.Steps is
 
    procedure Run_Step
      (Step    : not null access BDD.Features.Step_Record'Class;
+      Text    : String;
       Execute : Boolean)
    is
-      Text : constant String := Step.Text;
       Matches : Match_Array (0 .. 10);
    begin
       Match (Re_1, Text, Matches);

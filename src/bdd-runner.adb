@@ -36,24 +36,12 @@ package body BDD.Runner is
       Extension : Filesystem_String         := ".feature";
       Directory : GNATCOLL.VFS.Virtual_File := Create_From_Base ("features"))
    is
-      Files : File_Array_Access;
+      Files : File_Array_Access := Directory.Read_Dir_Recursive
+        (Extension => Extension, Filter => Files_Only);
    begin
-      if Directory.Is_Directory then
-         Files := Directory.Read_Dir (Files_Only);
+      if Files /= null then
          for F in Files'Range loop
-            if Files (F).File_Extension = Extension then
-               Self.Register (Files (F));
-            end if;
-         end loop;
-         Unchecked_Free (Files);
-
-         Files := Directory.Read_Dir (Dirs_Only);
-         for F in Files'Range loop
-            if Files (F).Base_Name /= "."
-              and then Files (F).Base_Name /= ".."
-            then
-               Self.Discover (Extension, Files (F));
-            end if;
+            Self.Register (Files (F));
          end loop;
          Unchecked_Free (Files);
       end if;

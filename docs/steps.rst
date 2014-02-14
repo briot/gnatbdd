@@ -22,7 +22,7 @@ previous step::
                \                /
                 \              /
                    GNATbdd
-                      |
+                      | generate glue code
                       | <compile and link>
                       |
                       \                feature files
@@ -68,19 +68,25 @@ define whether you are doing black box or white box testing (see below).
 The Ada packages should contain code similar to the following::
 
    package My_Steps is
-      procedure Set_User (Name : String)
-         with Step_Regep => "^a user named (.*)$";
-      procedure Check_Result (Expected : Integer)
-         with Step_Regep => "^I should get (\d+) as result";
 
-      procedure Set_User_Alt (Name : String);
-      pragma Step_Regexp (Set_User_Alt, "^a alternative user name (.*)$";
+      --  @given ^a user named (.*)$
+      procedure Set_User (Name : String);
+
+      --  @then ^I should get (\d+) as a result$
+      procedure Check_Result (Expected : Integer);
    end My_Steps;
 
+The example above shows two steps defined with special comments.
+The comment must occur just before the subprogram to which it applies.
 
-The example above shows two steps defined with the Ada 2012 aspects, and a
-third one defined with custom pragmas that are compatible with earlier versions
-of the language.
+.. note::
+    Should support custom aspects ?
+    With comments, how do we handle cases where the regexp is too long
+    to fix on a line, except for using pragma Style_Checks(Off).
+
+The comments should start with one of '@given', '@then' or '@when'.
+There is no semantic difference, they only act as a way to help
+introduce the regexp.
 
 The regular expressions are matched with the step as found in the
 :file:`*.feature` file. The parenthesis groups found in the regexp will be
@@ -92,6 +98,16 @@ the type is incorrect.
 It is recommended that regular expressions always be surrounded with '^' and
 '$', to indicate they should match the whole step definition, and not just part
 of it.
+
+.. index:: switches; --duplicates
+
+The switch :option:`--duplicates` can be used to systematically check all
+regular expressions for each step, and warn when there are multiple matching
+regexps.
+
+.. note::
+   alternatively, we could output the name/location of the subprogram that
+   handled the step, to ensure the right one is executed.
 
 Assert library
 ==============
@@ -297,3 +313,9 @@ since GNATbdd runs on the host.
    Can we run the steps directly on the target in this case, while limiting
    what features of the code we use like controlled types, memory
    allocation,...
+
+White box testing can itself be done in one of two ways: either be linking
+the application's code within the GNATbdd driver (because the code for the
+steps would `with` the application's own packages), or by spawning an
+executable and communicating with it via various means (stdin/stdout,
+sockets, pipes,...)

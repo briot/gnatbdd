@@ -60,7 +60,7 @@ There exist other similar software already.
   step definitions needs to be done in Ruby, although there exists a number
   of bridges to C++ and Java for instance.
   Using it requires a Ruby setup on the developer's machine, and there is
-  no built-in support for writting tests in Ada.
+  no built-in support for writting tests in Ada
 
 * :program:`Xreq` is a tool implemented by Sogilis, which has been used for
   the testsuite of CRM, GNAT Tracker and bugtool for a while. This tool is
@@ -72,6 +72,9 @@ There exist other similar software already.
   several iterations to make it usable, although it could be improved.
   This tool is not distributed outside of Sogilis and AdaCore, so it has not
   been extensively tested either.
+  No support for running tests in parallel, no asserts library to ease
+  writting tests, no support for cross development. No predefined steps or
+  regular expressions.
 
   It also lacks predefined regexps, step definitions, or even a full fledge
   assertions library that would make it easier to write new steps.

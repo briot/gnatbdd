@@ -77,6 +77,18 @@ package BDD.Features is
    --  Set the information about what part of the step's text matches the
    --  regexp.
 
+   function Should_Execute
+     (Self    : not null access Step_Record'Class;
+      Text    : String;
+      Matches : in out GNAT.Regpat.Match_Array;
+      Regexp  : GNAT.Regpat.Pattern_Matcher)
+      return Boolean;
+   --  Check whether we know how to execute the step (whether it matches any
+   --  of the definition), and set it up for proper execution.
+   --  Text is text of the step minus the leading 'given', 'when',...
+   --  True is returned if the subprogram associated with the step definition
+   --  should be executed.
+
    -------------
    -- Feature --
    -------------

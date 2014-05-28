@@ -21,24 +21,14 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This package provides support for matching steps with actual subprograms
---  registered by the user
+--  Provides command line interface and main program
 
-with BDD.Features;     use BDD.Features;
+with BDD.Runner;
 
-package BDD.Steps is
+package BDD.Main is
 
-   procedure Run_Step
-     (Step    : not null access BDD.Features.Step_Record'Class;
-      Text    : String;
-      Execute : Boolean);
-   --  Run a step, and sets its status.
-   --
-   --  If Execute is False, then we only check whether the step is known, but
-   --  it is not run. No exception is raised in this mode.
-   --
-   --  Text must be Step.Text, minus the leading 'Given|Then|...' words.
-   --
-   --  This procedure is expected to raise exceptions when a test fails.
+   procedure Main (Self : in out BDD.Runner.Feature_Runner);
+   --  The main loop, which discovers and then runs all the tests
+   --  Self should have been initialized with Add_Step_Runner first
 
-end BDD.Steps;
+end BDD.Main;

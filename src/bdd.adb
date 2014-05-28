@@ -21,12 +21,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with BDD.Formatters;    use BDD.Formatters;
-with BDD.Parser;        use BDD.Parser;
-with BDD.Runner;        use BDD.Runner;
 with GNAT.Command_Line; use GNAT.Command_Line;
 with GNATCOLL.Terminal; use GNATCOLL.Terminal;
-with GNATCOLL.Traces;   use GNATCOLL.Traces;
 
 package body BDD is
 
@@ -126,34 +122,5 @@ package body BDD is
 
       Getopt (Config, Callback'Unrestricted_Access);
    end Command_Line_Switches;
-
-   ----------
-   -- Main --
-   ----------
-
-   procedure Main is
-      Features : BDD.Runner.Feature_Runner;
-      Parser   : BDD.Parser.Feature_Parser;
-      Format   : access BDD.Formatters.Formatter'Class;
-      Term     : constant Terminal_Info_Access := new Terminal_Info;
-   begin
-      GNATCOLL.Traces.Parse_Config_File;
-      BDD.Command_Line_Switches;
-
-      Features.Discover (+BDD.Features_File_Ext.all, BDD.Features_Directory);
-
-      Term.Init_For_Stdout (Colors => BDD.Colors);
-      Format := BDD.Formatters.Create_Formatter;
-      Format.Init (Term);
-
-      Features.Run (Format, Parser);
-
-   exception
-      when GNAT.Command_Line.Exit_From_Command_Line
-         | GNAT.Command_Line.Invalid_Switch
-         | GNAT.Command_Line.Invalid_Parameter
-         =>
-         null;
-   end Main;
 
 end BDD;

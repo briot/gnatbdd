@@ -24,6 +24,7 @@
 --  Manipulating features files
 
 with Ada.Calendar;    use Ada.Calendar;
+with Ada.Containers.Doubly_Linked_Lists;
 with BDD.Features;    use BDD.Features;
 with BDD.Formatters;  use BDD.Formatters;
 with BDD.Parser;      use BDD.Parser;
@@ -75,7 +76,26 @@ package BDD.Runner is
       Background : BDD.Features.Scenario;
       Scenario   : BDD.Features.Scenario);
 
+   type Step_Runner is access procedure
+     (Step    : not null access BDD.Features.Step_Record'Class;
+      Text    : String;
+      Execute : Boolean);
+   --  Run a step, and sets its status.
+   --  If Execute is False, then we only check whether the step is known, but
+   --  it is not run. No exception is raised in this mode.
+   --  Text must be Step.Text, minus the leading 'Given|Then|...' words.
+   --  This procedure is expected to raise exceptions when a test fails.
+
+   procedure Add_Step_Runner
+     (Self   : in out Feature_Runner;
+      Runner : not null Step_Runner);
+   --  Add one more function that tests for step definitions.
+   --  Any number of those can be registered.
+
 private
+   package Step_Runner_Lists is new Ada.Containers.Doubly_Linked_Lists
+     (Step_Runner);
+
    type Feature_Runner is new BDD.Parser.Abstract_Feature_Runner with record
       Files  : GNATCOLL.VFS.File_Array_Access;
       Format : access BDD.Formatters.Formatter'Class;
@@ -84,6 +104,8 @@ private
       Scenario_Stats     : Count_Array := (others => 0);
       Features_Count     : Natural := 0;
       Current_Feature_Id : Integer := -1;
+
+      Runners : Step_Runner_Lists.List;
 
       Start : Ada.Calendar.Time;
    end record;

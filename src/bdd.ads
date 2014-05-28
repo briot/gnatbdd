@@ -79,7 +79,4 @@ package BDD is
    procedure Command_Line_Switches;
    --  Handles the command line switches
 
-   procedure Main;
-   --  The main loop, which discovers and then runs all the tests
-
 end BDD;

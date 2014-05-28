@@ -480,4 +480,24 @@ package body BDD.Features is
       end if;
    end Match_Info;
 
+   --------------------
+   -- Should_Execute --
+   --------------------
+
+   function Should_Execute
+     (Self    : not null access Step_Record'Class;
+      Text    : String;
+      Matches : in out GNAT.Regpat.Match_Array;
+      Regexp  : GNAT.Regpat.Pattern_Matcher)
+      return Boolean
+   is
+   begin
+      Match (Regexp, Text, Matches);
+      if Matches (0) /= No_Match then
+         Self.Set_Match_Info (Matches);
+         return True;
+      end if;
+      return False;
+   end Should_Execute;
+
 end BDD.Features;

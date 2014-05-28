@@ -1,14 +1,10 @@
 with "gnatcoll";
 
 project GNATBDD is
-   for Main use ("main.adb", "driver.adb");
+   for Main use ("gnatbdd.adb");
    for Languages use ("Ada");
    for Source_Dirs use ("src");
    for Object_Dir use "obj";
-
-   package Builder is
-      for Executable ("main.adb") use "gnattdd";
-   end Builder;
 
    package Compiler is
       for Switches ("Ada") use ("-g", "-gnata", "-gnatVa", "-gnatQ",

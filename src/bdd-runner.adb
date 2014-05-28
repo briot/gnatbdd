@@ -21,8 +21,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Assertions;
 with Ada.Exceptions; use Ada.Exceptions;
-with BDD.Steps;      use BDD.Steps;
 with GNATCOLL.Utils; use GNATCOLL.Utils;
 
 package body BDD.Runner is
@@ -143,12 +143,7 @@ package body BDD.Runner is
          First   : Integer := Text'First;
 
       begin
-         --  Run the step, or at least check whether it is defined.
-         if Execute then
-            Step.Set_Status (Status_Passed);
-         else
-            Step.Set_Status (Status_Skipped);
-         end if;
+         Step.Set_Status (Status_Undefined);
 
          --  Skip the leading 'Given|Then|...' keywords, which are irrelevant
          --  for the purpose of the match
@@ -160,19 +155,28 @@ package body BDD.Runner is
          end loop;
          Skip_Blanks (Text, First);
 
-         begin
-            --  Will set status to undefined if necessary
-            BDD.Steps.Run_Step
-              (Step, Text (First .. Text'Last), Execute => Execute);
-            --   if Step.Status = Status_Undefined then
-            --      --  ??? Could run some predefined steps here
-            --      null;
-            --   end if;
+         for R of Self.Runners loop
+            begin
+               --  Run the step, or at least check whether it is defined.
+               if Execute then
+                  Step.Set_Status (Status_Passed);
+               else
+                  Step.Set_Status (Status_Skipped);
+               end if;
 
-         exception
-            when E : others =>
-               Step.Set_Status (Status_Failed, Exception_Information (E));
-         end;
+               --  Will set status to undefined if necessary
+               R (Step, Text (First .. Text'Last), Execute => Execute);
+               exit when Step.Status /= Status_Undefined;
+
+            exception
+               when E : Ada.Assertions.Assertion_Error =>
+                  Step.Set_Status (Status_Failed, Exception_Message (E));
+                  exit;
+               when E : others =>
+                  Step.Set_Status (Status_Failed, Exception_Information (E));
+                  exit;
+            end;
+         end loop;
 
          if Execute then
             if Show_Steps then
@@ -225,5 +229,17 @@ package body BDD.Runner is
          end if;
       end if;
    end Scenario_End;
+
+   ---------------------
+   -- Add_Step_Runner --
+   ---------------------
+
+   procedure Add_Step_Runner
+     (Self   : in out Feature_Runner;
+      Runner : not null Step_Runner)
+   is
+   begin
+      Self.Runners.Append (Runner);
+   end Add_Step_Runner;
 
 end BDD.Runner;

@@ -21,10 +21,6 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Assertions;
-with Ada.Exceptions; use Ada.Exceptions;
-with GNATCOLL.Utils; use GNATCOLL.Utils;
-
 package body BDD.Runner is
 
    --------------
@@ -134,67 +130,43 @@ package body BDD.Runner is
          Step     : not null access Step_Record'Class);
       --  Run a specific step of the scenario
 
+      procedure Run_Scenario_And_Background (Nested : BDD.Features.Scenario);
+      --  Execute the background scenario, and then Scenario itself.
+      --  In the case of outline scenarios, this is called once for each line
+      --  in the examples, since we want to execute the background for each.
+
+      --------------
+      -- Run_Step --
+      --------------
+
       procedure Run_Step
         (Scenario : BDD.Features.Scenario;
          Step     : not null access Step_Record'Class)
       is
          Execute : constant Boolean := Scenario.Status = Status_Passed;
-         Text    : constant String := Step.Text;
-         First   : Integer := Text'First;
-
       begin
-         Step.Set_Status (Status_Undefined);
-
-         --  Skip the leading 'Given|Then|...' keywords, which are irrelevant
-         --  for the purpose of the match
-
-         while First <= Text'Last
-           and then not Is_Whitespace (Text (First))
-         loop
-            First := First + 1;
-         end loop;
-         Skip_Blanks (Text, First);
-
-         for R of Self.Runners loop
-            begin
-               --  Run the step, or at least check whether it is defined.
-               if Execute then
-                  Step.Set_Status (Status_Passed);
-               else
-                  Step.Set_Status (Status_Skipped);
-               end if;
-
-               --  Will set status to undefined if necessary
-               R (Step, Text (First .. Text'Last), Execute => Execute);
-               exit when Step.Status /= Status_Undefined;
-
-            exception
-               when E : Ada.Assertions.Assertion_Error =>
-                  Step.Set_Status (Status_Failed, Exception_Message (E));
-                  exit;
-               when E : others =>
-                  Step.Set_Status (Status_Failed, Exception_Information (E));
-                  exit;
-            end;
-         end loop;
+         Step.Run (Execute, Self.Runners);
 
          if Execute then
-            if Show_Steps then
-               Self.Steps_Stats (Step.Status) :=
-                 Self.Steps_Stats (Step.Status) + 1;
-            end if;
-
             Scenario.Set_Status (Step.Status);
          end if;
 
          if Show_Steps then
+            Self.Steps_Stats (Step.Status) :=
+              Self.Steps_Stats (Step.Status) + 1;
+
             Self.Format.Step_Completed (Scenario, Step);
          end if;
       end Run_Step;
 
-   begin
-      if Scenario.Kind = Kind_Scenario then
-         Scenario.Set_Status (Status_Passed);
+      ---------------------------------
+      -- Run_Scenario_And_Background --
+      ---------------------------------
+
+      procedure Run_Scenario_And_Background (Nested : BDD.Features.Scenario) is
+         Is_Nested : constant Boolean := Nested /= Scenario;
+      begin
+         Nested.Set_Status (Status_Passed);
 
          if Background /= No_Scenario then
             Show_Steps := Scenario.Get_Feature.Id /= Self.Current_Feature_Id;
@@ -209,25 +181,61 @@ package body BDD.Runner is
             end if;
 
             if Background.Status = Status_Passed then
-               Scenario.Set_Status (Status_Passed);
+               Nested.Set_Status (Status_Passed);
             else
-               Scenario.Set_Status (Status_Skipped);
+               Nested.Set_Status (Status_Skipped);
             end if;
          end if;
 
          Show_Steps := True;
-         Self.Format.Scenario_Start (Scenario);
-         Scenario.Foreach_Step (Run_Step'Access);
-         Self.Format.Scenario_Completed (Scenario);
 
-         Self.Scenario_Stats (Scenario.Status) :=
-           Self.Scenario_Stats (Scenario.Status) + 1;
+         if not Is_Nested then
+            Self.Format.Scenario_Start (Nested);
+            Nested.Foreach_Step (Run_Step'Access);
+            Self.Format.Scenario_Completed (Nested);
+
+            Self.Scenario_Stats (Nested.Status) :=
+              Self.Scenario_Stats (Nested.Status) + 1;
+
+         else
+            Nested.Foreach_Step (Run_Step'Access);
+         end if;
+
+         if Is_Nested then
+            case Nested.Status is
+               when Status_Passed | Status_Undefined | Status_Skipped =>
+                  null;  --  Do not change the status of Scenario
+               when Status_Failed =>
+                  Scenario.Set_Status (Status_Failed);
+            end case;
+
+         end if;
 
          if Scenario.Get_Feature.Id /= Self.Current_Feature_Id then
             Self.Features_Count := Self.Features_Count + 1;
             Self.Current_Feature_Id := Scenario.Get_Feature.Id;
          end if;
-      end if;
+      end Run_Scenario_And_Background;
+
+   begin
+      case Scenario.Kind is
+         when Kind_Scenario =>
+            Run_Scenario_And_Background (Scenario);
+
+         when Kind_Background =>
+            null;
+
+         when Kind_Outline =>
+            Scenario.Set_Status (Status_Passed);
+
+            Self.Format.Scenario_Start (Scenario);
+            Scenario.Foreach_Scenario
+              (Run_Scenario_And_Background'Access);
+            Self.Format.Scenario_Completed (Scenario);
+
+            Self.Scenario_Stats (Scenario.Status) :=
+              Self.Scenario_Stats (Scenario.Status) + 1;
+      end case;
    end Scenario_End;
 
    ---------------------

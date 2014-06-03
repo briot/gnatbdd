@@ -40,7 +40,7 @@ package BDD.Formatters is
    procedure Scenario_Start
      (Self     : in out Formatter;
       Scenario : BDD.Features.Scenario) is null;
-   --  Display information about a feature and ascenario just before the
+   --  Display information about a feature and a scenario just before the
    --  scenario is run.
 
    procedure Scenario_Completed

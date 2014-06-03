@@ -28,6 +28,8 @@ with GNAT.Source_Info;
 
 package BDD.Asserts_Generic is
 
+   Unexpected_Result : exception;
+
    procedure Raise_Assertion_Error
      (Msg      : String;
       Details  : String;
@@ -43,9 +45,10 @@ package BDD.Asserts_Generic is
    --  below).
 
    generic
-      type T is limited private;
+      type T (<>) is limited private;
       with function Image (V : T) return String;
-      with function "=" (V1, V2 : T) return Boolean is <>;
+      with function Operator (V1, V2 : T) return Boolean;
+      Operator_Image : String;
 
    package Asserts is
 

@@ -21,12 +21,17 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Exceptions;             use Ada.Exceptions;
 with Ada.Strings.Fixed;          use Ada.Strings, Ada.Strings.Fixed;
 with Ada.Unchecked_Deallocation;
+with BDD.Asserts_Generic;        use BDD.Asserts_Generic;
 with GNATCOLL.Traces;            use GNATCOLL.Traces;
+with GNATCOLL.Utils;             use GNATCOLL.Utils;
 
 package body BDD.Features is
    Me : constant Trace_Handle := Create ("BDD.FEATURES");
+
+   Substitution_Re : constant Pattern_Matcher := Compile ("<([^>]+)>");
 
    procedure Unchecked_Free is new Ada.Unchecked_Deallocation
      (Match_Array, Match_Array_Access);
@@ -127,6 +132,8 @@ package body BDD.Features is
    ----------
 
    procedure Free (Self : in out Scenario_Record) is
+      procedure Unchecked_Free is new Ada.Unchecked_Deallocation
+        (Scenario_Array, Scenario_Array_Access);
    begin
       Trace (Me, "Free scenario index=" & Self.Index'Img);
       Self.Name  := Null_Unbounded_String;
@@ -134,6 +141,7 @@ package body BDD.Features is
       Self.Index := 1;
       Self.Kind  := Kind_Scenario;
       Self.Feature := No_Feature;
+      Unchecked_Free (Self.Example_Scenarios);
       Self.Steps.Clear;
    end Free;
 
@@ -219,8 +227,9 @@ package body BDD.Features is
         (Scenario : BDD.Features.Scenario;
          Step     : not null access Step_Record'Class))
    is
+      SR  : constant access Scenario_Record := Self.Get;
    begin
-      for S of Self.Get.Steps loop
+      for S of SR.Steps loop
          Callback (Self, S);
       end loop;
    end Foreach_Step;
@@ -441,6 +450,19 @@ package body BDD.Features is
       Self.Table.Add_Row_As_String (Row);
    end Add_To_Table;
 
+   ---------------------
+   -- Add_Example_Row --
+   ---------------------
+
+   procedure Add_Example_Row (Self : Scenario; Row  : String) is
+      SR : constant access Scenario_Record := Self.Get;
+   begin
+      if SR.Examples = No_Table then
+         SR.Examples := Create;
+      end if;
+      SR.Examples.Add_Row_As_String (Row);
+   end Add_Example_Row;
+
    -----------
    -- Table --
    -----------
@@ -499,5 +521,128 @@ package body BDD.Features is
       end if;
       return False;
    end Should_Execute;
+
+   ---------
+   -- Run --
+   ---------
+
+   procedure Run
+     (Step         : not null access Step_Record'Class;
+      Execute      : Boolean;
+      Step_Runners : Step_Runner_Lists.List)
+   is
+      Text    : constant String := To_String (Step.Text);
+      First   : Integer := Text'First;
+   begin
+      Step.Set_Status (Status_Undefined);
+
+      --  Skip the leading 'Given|Then|...' keywords, which are irrelevant
+      --  for the purpose of the match
+
+      while First <= Text'Last
+        and then not Is_Whitespace (Text (First))
+      loop
+         First := First + 1;
+      end loop;
+      Skip_Blanks (Text, First);
+
+      for R of Step_Runners loop
+         begin
+            --  Run the step, or at least check whether it is defined.
+            if Execute then
+               Step.Set_Status (Status_Passed);
+            else
+               Step.Set_Status (Status_Skipped);
+            end if;
+
+            --  Will set status to undefined if necessary
+            R (Step, Text (First .. Text'Last), Execute => Execute);
+            exit when Step.Status /= Status_Undefined;
+
+         exception
+            when E : Unexpected_Result =>
+               Step.Set_Status (Status_Failed, Get_Message (E));
+               exit;
+            when E : others =>
+               Step.Set_Status (Status_Failed, Exception_Information (E));
+               exit;
+         end;
+      end loop;
+   end Run;
+
+   ----------------------
+   -- Foreach_Scenario --
+   ----------------------
+
+   procedure Foreach_Scenario
+     (Self     : Scenario;
+      Callback : not null access procedure (Scenario : BDD.Features.Scenario))
+   is
+      SR  : constant access Scenario_Record := Self.Get;
+      Tmp : Scenario;
+      Tmp_Step : Step;
+
+      function Substitute (Text : String; Row  : Positive) return String;
+      --  Update the text of S to substitute text with the examples.
+      --  This always properly restores the original text
+
+      function Substitute (Text : String; Row  : Positive) return String is
+         T       : Unbounded_String := To_Unbounded_String (Text);
+         Matches : Match_Array (0 .. 1);
+      begin
+         loop
+            declare
+               Tmp : constant String := To_String (T);
+            begin
+               Match (Substitution_Re, Tmp, Matches);
+               exit when Matches (0) = No_Match;
+               Replace_Slice
+                 (T, Matches (0).First, Matches (0).Last,
+                  By => SR.Examples.Get
+                    (Column => Tmp (Matches (1).First .. Matches (1).Last),
+                     Row    => Row));
+            end;
+         end loop;
+         return To_String (T);
+      end Substitute;
+
+   begin
+      case SR.Kind is
+         when Kind_Background | Kind_Scenario =>
+            Callback (Self);
+
+         when Kind_Outline =>
+            if SR.Example_Scenarios = null then
+               SR.Example_Scenarios := new Scenario_Array
+                 (1 .. SR.Examples.Height);
+
+               for Row in SR.Example_Scenarios'Range loop
+                  Trace (Me, "Create new scenario");
+                  Tmp := Create
+                    (Feature => Self.Get_Feature,
+                     Kind    => Kind_Scenario,
+                     Name    => Self.Name,
+                     Line    => Self.Line,
+                     Index   => Self.Index);
+
+                  for S of SR.Steps loop
+                     Tmp_Step := Create
+                       (Text => Substitute (To_String (S.Text), Row),
+                        Line => S.Line);
+                     Tmp_Step.Multiline := S.Multiline;
+                     Tmp_Step.Table     := S.Table;
+
+                     Tmp.Add (Tmp_Step);
+                  end loop;
+
+                  SR.Example_Scenarios (Row) := Tmp;
+               end loop;
+            end if;
+
+            for Row in SR.Example_Scenarios'Range loop
+               Callback (SR.Example_Scenarios (Row));
+            end loop;
+      end case;
+   end Foreach_Scenario;
 
 end BDD.Features;

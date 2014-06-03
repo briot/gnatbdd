@@ -32,12 +32,32 @@ with GNAT.Source_Info;
 package BDD.Asserts is
    package BAG renames BDD.Asserts_Generic;
 
-   package Integer_Asserts is new BAG.Asserts (Integer, Integer'Image, "=");
+   package Integer_Equals
+      is new BAG.Asserts (Integer, Integer'Image, "=", "=");
    procedure Assert
      (Val1, Val2 : Integer;
       Msg : String := "";
       Location   : String := GNAT.Source_Info.Source_Location;
       Entity     : String := GNAT.Source_Info.Enclosing_Entity)
-      renames Integer_Asserts.Assert;
+      renames Integer_Equals.Assert;
+
+   package Integer_Less_Than
+      is new BAG.Asserts (Integer, Integer'Image, "<", "<");
+   procedure Assert_Less_Than
+     (Val1, Val2 : Integer;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Integer_Less_Than.Assert;
+
+   function Identity (Str : String) return String is (Str);
+   package String_Equals
+      is new BAG.Asserts (String, Identity, "=", "=");
+   procedure Assert
+     (Val1, Val2 : String;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames String_Equals.Assert;
 
 end BDD.Asserts;

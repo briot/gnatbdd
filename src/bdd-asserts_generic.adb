@@ -58,7 +58,7 @@ package body BDD.Asserts_Generic is
 
       Id := Id + 1;
       Messages.Include (Actual, Full);
-      raise Assertion_Error with Actual;
+      raise Unexpected_Result with Actual;
    end Raise_Assertion_Error;
 
    -----------------
@@ -93,9 +93,11 @@ package body BDD.Asserts_Generic is
          Entity     : String := GNAT.Source_Info.Enclosing_Entity)
       is
       begin
-         if not (Val1 = Val2) then
+         if not Operator (Val1, Val2) then
             Raise_Assertion_Error
-              (Msg, Image (Val1) & " /= " & Image (Val2), Location, Entity);
+              (Msg,
+               Image (Val1) & ' ' & Operator_Image & ' ' & Image (Val2),
+               Location, Entity);
          end if;
       end Assert;
    end Asserts;

@@ -89,6 +89,29 @@ package BDD.Features is
    --  True is returned if the subprogram associated with the step definition
    --  should be executed.
 
+   type Step_Runner is access procedure
+     (Step    : not null access BDD.Features.Step_Record'Class;
+      Text    : String;
+      Execute : Boolean);
+   --  Run a step, and sets its status.
+   --  If Execute is False, then we only check whether the step is known, but
+   --  it is not run. No exception is raised in this mode.
+   --  Text must be Step.Text, minus the leading 'Given|Then|...' words.
+   --  This procedure is expected to raise exceptions when a test fails.
+
+   package Step_Runner_Lists is new Ada.Containers.Doubly_Linked_Lists
+     (Step_Runner);
+
+   procedure Run
+     (Step         : not null access Step_Record'Class;
+      Execute      : Boolean;
+      Step_Runners : Step_Runner_Lists.List);
+   --  Run a specific step, as part of a scenario.
+   --  Step_Runner is used to find the definition of each step as provided by
+   --  the user.
+   --  If Execute is False, the step is only tested to see whether there is a
+   --  valid definition for it, but is not actually executed.
+
    -------------
    -- Feature --
    -------------
@@ -153,12 +176,25 @@ package BDD.Features is
    procedure Add (Self : Scenario; S : not null access Step_Record'Class);
    --  Add a new step
 
+   procedure Add_Example_Row (Self : Scenario; Row  : String)
+     with Pre => Self.Kind = Kind_Outline;
+   --  Add a new row to the examples associated with a scenario outline.
+
    procedure Foreach_Step
      (Self     : Scenario;
       Callback : not null access procedure
         (Scenario : BDD.Features.Scenario;
          Step     : not null access Step_Record'Class));
-   --  Iterate over each step
+   --  Iterate over each step.
+   --  In the case of an outline, it returns the template steps, which are not
+   --  suitable for execution. Their text is exactly as was entered by the user
+
+   procedure Foreach_Scenario
+     (Self     : Scenario;
+      Callback : not null access procedure (Scenario : BDD.Features.Scenario));
+   --  Calls Callback for each scenario that can be generated through Self.
+   --  In general, this is Self only, but an outline scenario will in fact
+   --  generate one scenario per line in the examples.
 
    procedure Set_Status (Self : Scenario; Status : BDD.Scenario_Status);
    function Status (Self : Scenario) return BDD.Scenario_Status;
@@ -202,6 +238,9 @@ private
    No_Feature : constant Feature :=
      (Feature_Pointers.Null_Ref with null record);
 
+   type Scenario_Array;  --  Can't instantiate doubly_linked_Lists
+   type Scenario_Array_Access is access all Scenario_Array;
+
    type Scenario_Record is new Refcounted with record
       Name          : Ada.Strings.Unbounded.Unbounded_String;
       Line          : Positive := 1;
@@ -211,8 +250,12 @@ private
       Longuest_Step : Integer := -1;
       Status        : BDD.Scenario_Status;
       Feature       : BDD.Features.Feature;
-   end record;
 
+      Examples          : BDD.Tables.Table;
+      Example_Scenarios : Scenario_Array_Access;
+      --  For outlines, the list of all examples to be run, and the scenarios
+      --  we are generating for them.
+   end record;
    overriding procedure Free (Self : in out Scenario_Record);
 
    package Scenario_Pointers is new GNATCOLL.Refcount.Smart_Pointers
@@ -221,5 +264,7 @@ private
 
    No_Scenario : constant Scenario :=
      (Scenario_Pointers.Null_Ref with null record);
+
+   type Scenario_Array is array (Natural range <>) of Scenario;
 
 end BDD.Features;

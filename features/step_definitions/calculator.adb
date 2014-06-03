@@ -5,6 +5,11 @@ package body Calculator is
    Stack : array (1 .. 5) of Integer;
    Stack_Top : Integer := Stack'First;
 
+   procedure Reset is
+   begin
+      Stack_Top := Stack'First;
+   end Reset;
+
    procedure Enter (Value : String) is
    begin
       if Is_Digit (Value (Value'First)) then

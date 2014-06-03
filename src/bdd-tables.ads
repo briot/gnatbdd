@@ -85,7 +85,7 @@ package BDD.Tables is
    procedure Display
      (Self : Table; File : Ada.Text_IO.File_Type; Prefix : String := "");
    --  Display the table in File.
-   --  Each line is leaded by a Prefix.
+   --  Each line is lead by a Prefix.
 
 private
    package String_Vectors is new Ada.Containers.Indefinite_Vectors

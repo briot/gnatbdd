@@ -1,5 +1,8 @@
 package MySteps1 is
 
+   --  @given ^an empty calculator$
+   procedure Given_An_Empty_Calculator;
+
    --  @when ^I enter "(.*)"$
    procedure When_I_Enter (Value : String)
       with Pre => Value /= "";

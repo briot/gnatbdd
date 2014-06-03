@@ -185,7 +185,7 @@ package body BDD.Parser is
                   Step.Add_To_Table (Buffer (First_Char .. Line_E));
 
                when In_Examples =>
-                  Trace (Me, "MANU Example=" & Buffer (First_Char .. Line_E));
+                  Scenar.Add_Example_Row (Buffer (First_Char .. Line_E));
 
                when others =>
                   raise Syntax_Error with "Tables only allowed in"
@@ -314,7 +314,9 @@ package body BDD.Parser is
               (Text => Buffer (First_Char .. Line_E),
                Line => Line);
 
-            if State = In_Scenario then
+            if State = In_Scenario
+              or else State = In_Outline
+            then
                Scenar.Add (Step);
             else
                Background.Add (Step);

@@ -115,16 +115,34 @@ package body BDD.Formatters is
          Step     : not null access BDD.Features.Step_Record'Class);
       --  Display a step for a scenario
 
+      procedure Show_Scenario (Scenario : BDD.Features.Scenario);
+      --  Display the details for one of the scenarios (either the scenario
+      --  from the toplevel, or one of the scenarios generated from an outline)
+
       procedure Show_Step
         (Scenario : BDD.Features.Scenario;
          Step     : not null access BDD.Features.Step_Record'Class) is
       begin
          Display_Step (Self, Scenario, Step);
       end Show_Step;
+
+      procedure Show_Scenario (Scenario : BDD.Features.Scenario) is
+      begin
+         Scenario.Foreach_Step (Show_Step'Access);
+         New_Line;
+      end Show_Scenario;
+
    begin
       Display_Scenario_Header (Self, Scenario);
-      Scenario.Foreach_Step (Show_Step'Access);
-      New_Line;
+
+      case Scenario.Kind is
+         when Kind_Scenario | Kind_Background =>
+            Scenario.Foreach_Step (Show_Step'Access);
+            New_Line;
+
+         when Kind_Outline =>
+            Scenario.Foreach_Scenario (Show_Scenario'Access);
+      end case;
    end Display_Scenario_And_Steps;
 
    ----------------------

@@ -25,6 +25,7 @@
 
 with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with BDD.Asserts_Generic;   use BDD.Asserts_Generic;
 with BDD.Tables;            use BDD.Tables;
 with GNATCOLL.Refcount;     use GNATCOLL.Refcount;
 with GNAT.Regpat;           use GNAT.Regpat;
@@ -56,17 +57,19 @@ package BDD.Features is
 
    function Line (Self : not null access Step_Record) return Positive;
    function Text (Self : not null access Step_Record) return String;
-   function Multiline (Self : not null access Step_Record) return String;
    function Table (Self : not null access Step_Record) return BDD.Tables.Table;
+   function Multiline (Self : not null access Step_Record) return String;
    --  Return the components of the step
 
    procedure Set_Status
      (Self      : not null access Step_Record;
       Status    : BDD.Scenario_Status;
-      Error_Msg : String := "");
+      Details   : BDD.Asserts_Generic.Assert_Error := No_Error);
    function Status
      (Self   : not null access Step_Record) return BDD.Scenario_Status;
-   function Error_Msg (Self : not null access Step_Record) return String;
+   function Error_Details
+     (Self : not null access Step_Record)
+      return BDD.Asserts_Generic.Assert_Error;
    --  Set the status for a specific step
 
    procedure Set_Match_Info
@@ -210,7 +213,7 @@ private
       Line      : Positive;
       Text      : Ada.Strings.Unbounded.Unbounded_String;
       Multiline : Ada.Strings.Unbounded.Unbounded_String;
-      Error_Msg : Ada.Strings.Unbounded.Unbounded_String;
+      Error     : Assert_Error;
       Status    : BDD.Scenario_Status;
       Table     : BDD.Tables.Table;
       Match     : Match_Array_Access;

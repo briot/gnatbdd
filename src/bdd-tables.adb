@@ -85,7 +85,27 @@ package body BDD.Tables is
       else
          R.Names.Replace_Element (Column, Name);
       end if;
+      R.Width := Integer'Max (R.Width, Column);
    end Set_Column_Name;
+
+   ---------------------
+   -- Get_Column_Name --
+   ---------------------
+
+   function Get_Column_Name
+     (Self   : Table;
+      Column : Positive) return String
+   is
+      R : constant not null access Table_Record := Self.Get;
+   begin
+      if R.Names.Is_Empty
+        or else Integer (R.Names.Length) < Column
+      then
+         return "";
+      else
+         return R.Names.Element (Column);
+      end if;
+   end Get_Column_Name;
 
    ---------
    -- Put --
@@ -103,18 +123,20 @@ package body BDD.Tables is
          R.Insert (Column, Value);
       end Do_Update;
 
+      SR : constant not null access Table_Record := Self.Get;
    begin
-      if Row > Integer (Self.Get.Rows.Length) then
+      if Row > Integer (SR.Rows.Length) then
          declare
             R : String_Vectors.Vector;
          begin
             R.Reserve_Capacity
               (Ada.Containers.Count_Type (Integer'Max (Column, Self.Width)));
-            Self.Get.Rows.Append (R);
+            SR.Rows.Append (R);
          end;
       end if;
 
-      Self.Get.Rows.Update_Element (Row, Do_Update'Unrestricted_Access);
+      SR.Rows.Update_Element (Row, Do_Update'Unrestricted_Access);
+      SR.Width := Integer'Max (SR.Width, Column);
    end Put;
 
    ---------
@@ -128,7 +150,13 @@ package body BDD.Tables is
       return String
    is
    begin
-      return Self.Get.Rows.Element (Row).Element (Column);
+      if Column > Self.Width
+        or else Row > Self.Height
+      then
+         return "";
+      else
+         return Self.Get.Rows.Element (Row).Element (Column);
+      end if;
    end Get;
 
    ---------
@@ -150,7 +178,7 @@ package body BDD.Tables is
 
    function Width (Self : Table) return Natural is
    begin
-      return Natural (Self.Get.Names.Length);
+      return Self.Get.Width;
    end Width;
 
    ------------

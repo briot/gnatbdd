@@ -28,6 +28,7 @@ with Ada.Containers.Indefinite_Vectors;
 with Ada.Containers.Vectors;
 with Ada.Text_IO;          use Ada.Text_IO;
 with GNATCOLL.Refcount;    use GNATCOLL.Refcount;
+with GNATCOLL.Terminal;    use GNATCOLL.Terminal;
 
 package BDD.Tables is
 
@@ -53,6 +54,9 @@ package BDD.Tables is
      (Self   : Table;
       Column : Positive;
       Name   : String);
+   function Get_Column_Name
+     (Self   : Table;
+      Column : Positive) return String;
    --  Set the name of the Column-th column
 
    procedure Put
@@ -95,6 +99,7 @@ private
 
    type Table_Record is new GNATCOLL.Refcount.Refcounted with record
       Names  : String_Vectors.Vector;
+      Width  : Natural := 0;
       Rows   : Row_Vectors.Vector;   --  does not include column titles
    end record;
 

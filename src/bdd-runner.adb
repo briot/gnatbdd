@@ -124,6 +124,7 @@ package body BDD.Runner is
       Scenario   : BDD.Features.Scenario)
    is
       Show_Steps : Boolean;
+      Is_First   : Boolean := True;
 
       procedure Run_Step
         (Scenario : BDD.Features.Scenario;
@@ -198,7 +199,11 @@ package body BDD.Runner is
               Self.Scenario_Stats (Nested.Status) + 1;
 
          else
+            Self.Format.Nested_Scenario_Start
+              (Nested, Is_First => Is_First);
+            Is_First := False;
             Nested.Foreach_Step (Run_Step'Access);
+            Self.Format.Nested_Scenario_Completed (Nested);
          end if;
 
          if Is_Nested then

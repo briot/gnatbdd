@@ -26,9 +26,11 @@ with Ada.Strings.Unbounded;   use Ada.Strings.Unbounded;
 with Ada.Unchecked_Deallocation;
 with Ada.Text_IO;             use Ada.Text_IO;
 with GNAT.Regpat;             use GNAT.Regpat;
+with GNATCOLL.Traces;         use GNATCOLL.Traces;
 with GNATCOLL.Utils;          use GNATCOLL.Utils;
 
 package body BDD.Codegen is
+   Me : constant Trace_Handle := Create ("BDD.CODEGEN");
 
    Cst_Procedure  : constant String := "procedure ";
    Cst_Procedure_Re : constant Pattern_Matcher := Compile
@@ -40,7 +42,7 @@ package body BDD.Codegen is
       & "\))?(\s+with .*?)?;",    --  end of group 2
       Case_Insensitive or Single_Line);
    Cst_Package_Re : constant Pattern_Matcher :=
-     Compile ("^package ([_\.\w]+)", Case_Insensitive);
+     Compile ("^package ([_\.\w]+)", Case_Insensitive or Multiple_Lines);
    Cst_Comment_Re : constant Pattern_Matcher :=
      Compile ("--\s*@(given|then|when)\s+");
 
@@ -210,9 +212,15 @@ package body BDD.Codegen is
       Subprogram  : GNAT.Strings.String_Access;
       Colon       : Integer;
       List        : Param_List_Access;
+      List_Last   : Integer := 0;
       Expected_Params : Natural;
 
+      Table_Param : GNAT.Strings.String_Access;
+      --  Name of the parameter for a Table (null if no table expected)
+
    begin
+      Trace (Me, "Found regexp " & Regexp);
+
       --  Check this is a valid regular expression
 
       begin
@@ -266,35 +274,62 @@ package body BDD.Codegen is
          begin
             List := new Param_List (Params'Range);
             for P in Params'Range loop
+               Colon := Find_Char (Params (P).all, ':');
+               if Colon > Params (P)'Last then
+                  Put_Line
+                    (Standard_Error,
+                     "Error while parsing subprogram declaration for step '"
+                     & Regexp & "'");
+                  return;
+               end if;
+
                declare
                   D : String renames Params (P).all;
+                  Name : constant String := Trim (D (D'First .. Colon - 1));
+                  Typ  : constant String := Trim (D (Colon + 1 .. D'Last));
                begin
-                  Colon := Find_Char (D, ':');
-                  if Colon > D'Last then
-                     Put_Line
-                       (Standard_Error,
-                        "Error while parsing subprogram declaration for step '"
-                        & Regexp & "'");
-                     return;
+                  if P > Expected_Params then
+                     --  Is this a Table parameter ?
+                     if Typ = "BDD.Tables.Table" then
+                        if Table_Param /= null then
+                           Put_Line
+                             (Standard_Error,
+                              "Multiple table parameters is unsupported for"
+                              & " step '" & Regexp & "'");
+                           Free (List);
+                           Free (Subprogram);
+                           return;
+                        end if;
+                        Table_Param := new String'(Name);
+                     else
+                        Put_Line
+                          (Standard_Error,
+                           "Mismatch between the number of parenthesis in the"
+                           & " regexp and the subprogram parameters for step '"
+                           & Regexp & "'");
+                        Free (List);
+                        Free (Subprogram);
+                        return;
+                     end if;
+                  else
+                     List (P) :=
+                       (Name    => new String'(Name),
+                        Of_Type => new String'(Typ));
+                     List_Last := P;
                   end if;
-
-                  List (P) :=
-                    (Name => new String'(Trim (D (D'First .. Colon - 1))),
-                     Of_Type => new String'(Trim (D (Colon + 1 .. D'Last))));
                end;
             end loop;
 
             Free (Params);
          end;
-      else
-         List := new Param_List (1 .. 0);
       end if;
 
-      if List'Length /= Expected_Params then
+      if List_Last /= Expected_Params then
          Put_Line
            (Standard_Error,
-            "Mismatch between the number of parenthesis in the regexp and the"
-            & " subprogram parameters for step '" & Regexp & "'");
+            "Mismatch between the number of parenthesis in the"
+            & " regexp and the subprogram parameters for step '"
+            & Regexp & "'");
          Free (List);
          Free (Subprogram);
          return;
@@ -306,7 +341,7 @@ package body BDD.Codegen is
 
       Data.Steps_Count := Data.Steps_Count + 1;
       Data.Max_Parameter_Count := Integer'Max
-        (Data.Max_Parameter_Count, List'Length);
+        (Data.Max_Parameter_Count, List_Last);
 
       if Data.Steps_Count /= 1 then
          Append (Data.Matchers, "      els");
@@ -320,14 +355,16 @@ package body BDD.Codegen is
               & "         if Execute then" & ASCII.LF
               & "            " & Subprogram.all);
 
-      if List'Length = 0 then
+      if List_Last = 0
+        and then Table_Param = null
+      then
          Append (Data.Matchers, ";");
       else
-         for L in List'Range loop
+         Append (Data.Matchers, " (");
+
+         for L in List'First .. List_Last loop
             if L /= List'First then
                Append (Data.Matchers, ",");
-            else
-               Append (Data.Matchers, "(");
             end if;
             Append (Data.Matchers,
                     ASCII.LF & "               "
@@ -341,6 +378,17 @@ package body BDD.Codegen is
                        & Image (1 + L - List'First, Min_Width => 0)
                        & ").Last)"));
          end loop;
+
+         if Table_Param /= null then
+            if List_Last > 0 then
+               Append (Data.Matchers, ",");
+            end if;
+            Append (Data.Matchers,
+                    ASCII.LF & "               "
+                    & Table_Param.all
+                    & " => Step.Table");
+         end if;
+
          Append (Data.Matchers, ");");
       end if;
 
@@ -355,6 +403,7 @@ package body BDD.Codegen is
               & " : constant Pattern_Matcher := Compile" & ASCII.LF
               & "      (""" & Escape (Regexp) & """);" & ASCII.LF);
 
+      Free (Table_Param);
       Free (Subprogram);
       Free (List);
    end Parse_Subprogram_Def;
@@ -378,6 +427,10 @@ package body BDD.Codegen is
       Found       : Boolean := False;
    begin
       if Contents /= null then
+         if Active (Me) then
+            Trace (Me, "Check steps in " & File.Display_Full_Name);
+         end if;
+
          Pos := Contents'First;
 
          --  Find the start of the package

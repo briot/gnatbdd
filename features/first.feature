@@ -21,3 +21,15 @@ Feature: A first feature
          |  10    |  20    |   +       | 30     |
          |  20    |  10    |   -       | 10     |
          |  10    |  20    |   +       | 40     |
+
+   Scenario: Checking stack contents
+      When I enter "10"
+      And  I enter "20"
+      And  I enter "30"
+      And  I enter "40"
+      Then the stack should contain
+         | value |
+         | 10    |
+         | 20    |
+         | 31    |
+         | 40    |

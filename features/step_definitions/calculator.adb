@@ -43,4 +43,13 @@ package body Calculator is
       return Stack (Stack_Top - 1);
    end Peek;
 
+   function Peek_Stack return Integer_Array is
+      Result : Integer_Array (Stack'First .. Stack_Top - 1);
+   begin
+      for R in Result'Range loop
+         Result (R) := Stack (R);
+      end loop;
+      return Result;
+   end Peek_Stack;
+
 end Calculator;

@@ -21,60 +21,125 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Assertions;        use Ada.Assertions;
-with Ada.Containers.Indefinite_Hashed_Maps;
-with Ada.Strings.Hash;
-with GNATCOLL.Utils;        use GNATCOLL.Utils;
+with BDD.Formatters;        use BDD.Formatters;
 
 package body BDD.Asserts_Generic is
 
-   package String_Maps is new Ada.Containers.Indefinite_Hashed_Maps
-     (String, String, Ada.Strings.Hash, "=", "=");
+   Current_Exception : Assert_Error := No_Error;
+   --  The details associated with the current exception.
+   --  There is only one exception being processed at a time (in a task-free
+   --  environment), so we need only store a single instance, to avoid
+   --  wasting memory. Since we do not know when an exception_occurrence is
+   --  no longer used, we would not know when to free the memory otherwise).
 
-   Messages : String_Maps.Map;
-   Id : Positive := 1;  --  a unique id for all raised exceptions
+   ---------
+   -- Get --
+   ---------
 
-   ---------------------------
-   -- Raise_Assertion_Error --
-   ---------------------------
-
-   procedure Raise_Assertion_Error
-     (Msg      : String;
-      Details  : String;
-      Location : String;
-      Entity   : String)
-   is
-      Full : constant String :=
-        (if Msg /= "" then Msg & ASCII.LF else "")
-        & Details & ASCII.LF & "at " & Entity & " " & Location;
-      M : constant String :=
-        '@' & Image (Id, Min_Width => 0) & '@' & Msg & Details;
-      Actual : String renames
-        M (M'First .. M'First + Integer'Min (M'Length - 1, 200));
+   function Get (E : Exception_Occurrence) return Assert_Error is
    begin
-      --  Preserve as much as possible of the message (in case this exception
-      --  is handled by code other than GNATBdd), but insert a unique id at
-      --  the beginning so that we can retrieve the full message from the map.
-
-      Id := Id + 1;
-      Messages.Include (Actual, Full);
-      raise Unexpected_Result with Actual;
-   end Raise_Assertion_Error;
-
-   -----------------
-   -- Get_Message --
-   -----------------
-
-   function Get_Message (E : Exception_Occurrence) return String is
-      Actual : constant String := Exception_Message (E);
-      C      : constant String_Maps.Cursor := Messages.Find (Actual);
-   begin
-      if not String_Maps.Has_Element (C) then
-         return Actual;
+      if Exception_Identity (E) = Unexpected_Result'Identity then
+         return Current_Exception;
       else
-         return String_Maps.Element (C);
+         return No_Error;
       end if;
-   end Get_Message;
+   end Get;
+
+   -------------
+   -- Details --
+   -------------
+
+   function Details (Self : Assert_Error) return Error_Details_Access is
+   begin
+      return Error_Details_Access (Self.Get);
+   end Details;
+
+   -----------------
+   -- Set_Details --
+   -----------------
+
+   procedure Set_Details
+     (Self     : not null access Error_Details;
+      Details  : String := "";
+      Msg      : String := "";
+      Location : String := GNAT.Source_Info.Source_Location;
+      Entity   : String := GNAT.Source_Info.Enclosing_Entity)
+   is
+   begin
+      Self.Details  := To_Unbounded_String (Details);
+      Self.Msg      := To_Unbounded_String (Msg);
+      Self.Location := To_Unbounded_String ("at " & Entity & "::" & Location);
+   end Set_Details;
+
+   ---------------------
+   -- Raise_Exception --
+   ---------------------
+
+   procedure Raise_Exception (Self : not null access Error_Details) is
+   begin
+      Current_Exception.Set (Self);
+
+      raise Unexpected_Result with
+        To_String (Self.Msg) & ' ' & To_String (Self.Details)
+        & To_String (Self.Location);
+   end Raise_Exception;
+
+   -------------
+   -- Display --
+   -------------
+
+   procedure Display
+     (Self   : Assert_Error;
+      Term   : not null access GNATCOLL.Terminal.Terminal_Info'Class;
+      File   : Ada.Text_IO.File_Type;
+      Prefix : String := "")
+   is
+   begin
+      Display (Self.Details, Term, File, Prefix);
+   end Display;
+
+   -------------
+   -- Display --
+   -------------
+
+   procedure Display
+     (Self   : not null access Error_Details;
+      Term   : not null access GNATCOLL.Terminal.Terminal_Info'Class;
+      File   : Ada.Text_IO.File_Type;
+      Prefix : String := "")
+   is
+      pragma Unreferenced (Term);
+   begin
+      if Self.Msg /= "" then
+         Indent (File, To_String (Self.Msg), Prefix => Prefix);
+         if Element (Self.Msg, Length (Self.Msg)) /= ASCII.LF then
+            New_Line (File);
+         end if;
+      end if;
+
+      if Self.Details /= "" then
+         Indent (File, To_String (Self.Details), Prefix => Prefix);
+         if Element (Self.Details, Length (Self.Details)) /= ASCII.LF then
+            New_Line (File);
+         end if;
+      end if;
+
+      Indent (File, To_String (Self.Location), Prefix => Prefix);
+      New_Line (File);
+   end Display;
+
+   --------------------
+   -- From_Exception --
+   --------------------
+
+   function From_Exception (E : Exception_Occurrence) return Assert_Error is
+      Error : constant Error_Details_Access := new Error_Details;
+      Result : Assert_Error;
+   begin
+      Error.Set_Details (Details => Exception_Information (E));
+      Result.Set (Error);
+      return Result;
+   end From_Exception;
 
    -------------
    -- Asserts --
@@ -92,12 +157,17 @@ package body BDD.Asserts_Generic is
          Location   : String := GNAT.Source_Info.Source_Location;
          Entity     : String := GNAT.Source_Info.Enclosing_Entity)
       is
+         Error : Error_Details_Access;
       begin
          if not Operator (Val1, Val2) then
-            Raise_Assertion_Error
-              (Msg,
-               Image (Val1) & ' ' & Operator_Image & ' ' & Image (Val2),
-               Location, Entity);
+            Error := new Error_Details;
+            Error.Set_Details
+              (Msg     => Msg,
+               Details =>
+                 Image (Val1) & ' ' & Not_Operator_Image & ' ' & Image (Val2),
+               Location => Location,
+               Entity   => Entity);
+            Error.Raise_Exception;
          end if;
       end Assert;
    end Asserts;

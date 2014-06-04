@@ -23,6 +23,7 @@
 
 --  The formatters are used to display output for the user
 
+with Ada.Text_IO;
 private with Ada.Containers.Doubly_Linked_Lists;
 with BDD.Features;      use BDD.Features;
 with GNATCOLL.Terminal; use GNATCOLL.Terminal;
@@ -47,6 +48,17 @@ package BDD.Formatters is
      (Self     : in out Formatter;
       Scenario : BDD.Features.Scenario) is null;
    --  Called when a scenario has completed.
+   --  Its status has already been set
+
+   procedure Nested_Scenario_Start
+     (Self     : in out Formatter;
+      Scenario : BDD.Features.Scenario;
+      Is_First : Boolean) is null;
+   procedure Nested_Scenario_Completed
+     (Self     : in out Formatter;
+      Scenario : BDD.Features.Scenario) is null;
+   --  Called when a nested scenario starts or has completed.
+   --  These are the scenarios generated from an Outline Scenario examples.
    --  Its status has already been set
 
    procedure Step_Completed
@@ -88,6 +100,10 @@ package BDD.Formatters is
      (Self     : in out Formatter_Full;
       Scenario : BDD.Features.Scenario;
       Step     : not null access BDD.Features.Step_Record'Class);
+   overriding procedure Nested_Scenario_Start
+     (Self     : in out Formatter_Full;
+      Scenario : BDD.Features.Scenario;
+      Is_First : Boolean);
 
    ----------
    -- Dots --
@@ -130,6 +146,16 @@ package BDD.Formatters is
    overriding procedure Scenario_Completed
      (Self     : in out Formatter_Hide_Passed;
       Scenario : BDD.Features.Scenario);
+
+   -----------
+   -- Utils --
+   -----------
+
+   procedure Indent
+     (File   : Ada.Text_IO.File_Type;
+      Text   : String;
+      Prefix : String := "");
+   --  Print a multi-line text so that each line is indented by Prefix
 
 private
    package Scenario_Lists is new Ada.Containers.Doubly_Linked_Lists

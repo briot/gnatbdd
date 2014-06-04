@@ -21,10 +21,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Exceptions;             use Ada.Exceptions;
 with Ada.Strings.Fixed;          use Ada.Strings, Ada.Strings.Fixed;
 with Ada.Unchecked_Deallocation;
-with BDD.Asserts_Generic;        use BDD.Asserts_Generic;
 with GNATCOLL.Traces;            use GNATCOLL.Traces;
 with GNATCOLL.Utils;             use GNATCOLL.Utils;
 
@@ -355,7 +353,7 @@ package body BDD.Features is
       Trace (Me, "Free step at line" & Self.Line'Img);
       Self.Text      := Null_Unbounded_String;
       Self.Multiline := Null_Unbounded_String;
-      Self.Error_Msg := Null_Unbounded_String;
+      Self.Error     := No_Error;
       Self.Status    := Status_Passed;
       Self.Table     := No_Table;
       Unchecked_Free (Self.Match);
@@ -396,21 +394,22 @@ package body BDD.Features is
    procedure Set_Status
      (Self      : not null access Step_Record;
       Status    : BDD.Scenario_Status;
-      Error_Msg : String := "")
+      Details   : Assert_Error := No_Error)
    is
    begin
       Self.Status := Status;
-      Self.Error_Msg := To_Unbounded_String (Error_Msg);
+      Self.Error  := Details;
    end Set_Status;
 
-   ---------------
-   -- Error_Msg --
-   ---------------
+   -------------------
+   -- Error_Details --
+   -------------------
 
-   function Error_Msg (Self : not null access Step_Record) return String is
+   function Error_Details
+     (Self : not null access Step_Record) return Assert_Error is
    begin
-      return To_String (Self.Error_Msg);
-   end Error_Msg;
+      return Self.Error;
+   end Error_Details;
 
    ------------
    -- Status --
@@ -561,10 +560,10 @@ package body BDD.Features is
 
          exception
             when E : Unexpected_Result =>
-               Step.Set_Status (Status_Failed, Get_Message (E));
+               Step.Set_Status (Status_Failed, Get (E));
                exit;
             when E : others =>
-               Step.Set_Status (Status_Failed, Exception_Information (E));
+               Step.Set_Status (Status_Failed, From_Exception (E));
                exit;
          end;
       end loop;

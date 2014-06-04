@@ -21,11 +21,12 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Containers; use Ada.Containers;
-with Ada.Text_IO;    use Ada.Text_IO;
-with BDD.Tables;     use BDD.Tables;
-with GNATCOLL.Utils; use GNATCOLL.Utils;
-with GNAT.Regpat;    use GNAT.Regpat;
+with Ada.Containers;      use Ada.Containers;
+with Ada.Text_IO;         use Ada.Text_IO;
+with BDD.Asserts_Generic; use BDD.Asserts_Generic;
+with BDD.Tables;          use BDD.Tables;
+with GNATCOLL.Utils;      use GNATCOLL.Utils;
+with GNAT.Regpat;         use GNAT.Regpat;
 
 package body BDD.Formatters is
 
@@ -269,6 +270,30 @@ package body BDD.Formatters is
       Display_Location (Self, Scenario);
    end Display_Scenario_Header;
 
+   ------------
+   -- Indent --
+   ------------
+
+   procedure Indent
+     (File   : Ada.Text_IO.File_Type;
+      Text   : String;
+      Prefix : String := "")
+   is
+      Start, Last : Integer;
+   begin
+      Start := Text'First;
+      while Start <= Text'Last loop
+         Last := Line_End (Text, Start);
+         if Last < Start then  --  empty line
+            New_Line (File);
+            Start := Last + 2;
+         else
+            Put (File, Prefix & Text (Start .. Last));
+            Start := Last + 1;
+         end if;
+      end loop;
+   end Indent;
+
    ------------------
    -- Display_Step --
    ------------------
@@ -278,25 +303,6 @@ package body BDD.Formatters is
       Scenario : BDD.Features.Scenario;
       Step     : not null access BDD.Features.Step_Record'Class)
    is
-      procedure Indent (Text : String);
-      --  Display text on multiple lines, and indent each line as needed
-
-      procedure Indent (Text : String) is
-         Start, Last : Integer;
-      begin
-         Start := Text'First;
-         while Start <= Text'Last loop
-            Last := Line_End (Text, Start);
-            if Last < Start then  --  empty line
-               New_Line;
-               Start := Last + 2;
-            else
-               Put ("      " & Text (Start .. Last));
-               Start := Last + 1;
-            end if;
-         end loop;
-      end Indent;
-
       Info : constant Match_Array := Step.Match_Info;
    begin
       if Self.Term.Has_Colors then
@@ -372,27 +378,28 @@ package body BDD.Formatters is
               (Term       => Ada.Text_IO.Standard_Output,
                Foreground => BDD.Step_Colors (Step.Status));
             Put_Line ("      """"""");
-            Indent (Multi);
+            Indent (Ada.Text_IO.Standard_Output, Multi, Prefix => "      ");
             Put_Line ("      """"""");
          end if;
       end;
 
-      if Step.Table /= No_Table then
+      declare
+         Error : constant Assert_Error := Step.Error_Details;
+      begin
          Self.Term.Set_Color
            (Term       => Ada.Text_IO.Standard_Output,
             Foreground => BDD.Step_Colors (Step.Status));
-         Step.Table.Display
-           (Ada.Text_IO.Standard_Output, Prefix => "      ");
-      end if;
 
-      declare
-         Msg : constant String := Step.Error_Msg;
-      begin
-         if Msg /= "" then
-            Self.Term.Set_Color
-              (Term       => Ada.Text_IO.Standard_Output,
-               Foreground => BDD.Step_Colors (Step.Status));
-            Indent (Msg);
+         if Error /= No_Error then
+            Display (Error, Self.Term, Ada.Text_IO.Standard_Output,
+                     Prefix => "      ");
+         else
+            --  Display the default step's table, since it full matched or was
+            --  not even run.
+            if Step.Table /= No_Table then
+               Step.Table.Display
+                 (Ada.Text_IO.Standard_Output, Prefix => "      ");
+            end if;
          end if;
       end;
 
@@ -514,6 +521,22 @@ package body BDD.Formatters is
    begin
       New_Line;
    end Scenario_Completed;
+
+   ---------------------------
+   -- Nested_Scenario_Start --
+   ---------------------------
+
+   overriding procedure Nested_Scenario_Start
+     (Self     : in out Formatter_Full;
+      Scenario : BDD.Features.Scenario;
+      Is_First : Boolean)
+   is
+      pragma Unreferenced (Self, Scenario);
+   begin
+      if not Is_First then
+         New_Line;
+      end if;
+   end Nested_Scenario_Start;
 
    --------------------
    -- Step_Completed --

@@ -23,32 +23,110 @@
 
 --  An assertion library for use with GNATBDD
 
-with Ada.Exceptions;   use Ada.Exceptions;
+with Ada.Exceptions;        use Ada.Exceptions;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Ada.Text_IO;           use Ada.Text_IO;
 with GNAT.Source_Info;
+with GNATCOLL.Refcount;     use GNATCOLL.Refcount;
+with GNATCOLL.Terminal;     use GNATCOLL.Terminal;
 
 package BDD.Asserts_Generic is
 
+   -------------------
+   --  Assert_Error --
+   -------------------
+   --  Steps might fail in several ways. For instance, they might raise an
+   --  unexpected exception, or perform explicit tests.
+   --  When such a test fails, it should raise an exception. We encourage you
+   --  to raise an exception via the following API, which allows you to embed
+   --  details about the failure, as well as provide a nice way to display them
+   --  to the user.
+   --  The reason to use the API below is that Ada exception messages are
+   --  limited in length, and thus cannot embed the rich information necessary
+   --  to understand the error without launching a debugger.
+
    Unexpected_Result : exception;
 
-   procedure Raise_Assertion_Error
-     (Msg      : String;
-      Details  : String;
-      Location : String;
-      Entity   : String);
-   --  Raises an assertion error, storing the full message in a temporary
-   --  location since exception messages are limited in length and would not
-   --  show the whole message
+   type Assert_Error is tagged private;
+   No_Error : constant Assert_Error;
+   --  A reference counted-type that describes the details for an error.
+   --  This type is tagged only so that the dot notation can be used for calls.
+   --  If you need to store the details of an exception, this is the type that
+   --  should be stored, not the underlying Error_Details_Access, which might
+   --  be freed at any point if no Assert_Error still exists.
 
-   function Get_Message (E : Exception_Occurrence) return String;
-   --  Retrieve the whole message from the exception (which should have been
+   function Get (E : Exception_Occurrence) return Assert_Error;
+   --  Retrieve the details from the exception (which should have been
    --  raises by Raise_Assert_Error above, or one of the Assert procedures
    --  below).
+
+   type Error_Details is tagged private;
+   type Error_Details_Access is access all Error_Details'Class;
+   --  the details stored in an assert_Error.
+   --  You are encouraged to extend this type if you need to provide additional
+   --  details about errors.
+
+   procedure Free (Self : in out Error_Details) is null;
+   --  Free the memory used by Self.
+   --  This should not be called directly.
+
+   function Details (Self : Assert_Error) return Error_Details_Access;
+   --  Returns the actual details of the exception.
+   --  Do not store the result access, which might be freed when Self is no
+   --  longer referenced by your application.
+
+   procedure Set_Details
+     (Self     : not null access Error_Details;
+      Details  : String := "";
+      Msg      : String := "";
+      Location : String := GNAT.Source_Info.Source_Location;
+      Entity   : String := GNAT.Source_Info.Enclosing_Entity);
+   --  Store basic information in Self.
+   --
+   --  Msg is in general a static string provided by the user, to help pinpoint
+   --  which particular assert failed. It will often be left to the empty
+   --  string, since there is already quite a lot of context when the error is
+   --  displayed to the user.
+   --
+   --  Details should be used to describe the expected and actual values.
+   --
+   --  Location and Entity are used to point to the code location where the
+   --  error is raised.
+
+   procedure Raise_Exception (Self : not null access Error_Details);
+   pragma No_Return (Raise_Exception);
+   --  Wraps Self in an Assert_Error, and raise the Unexpected_Result
+   --  exception.
+   --  When this exception is handled, one can use Get to retrieve the
+   --  Assert_Error, and then Details to get access to Self again.
+
+   procedure Display
+     (Self   : Assert_Error;
+      Term   : not null access GNATCOLL.Terminal.Terminal_Info'Class;
+      File   : Ada.Text_IO.File_Type;
+      Prefix : String := "");
+   procedure Display
+     (Self   : not null access Error_Details;
+      Term   : not null access GNATCOLL.Terminal.Terminal_Info'Class;
+      File   : Ada.Text_IO.File_Type;
+      Prefix : String := "");
+   --  Display the details on File, using Term to set appropriate colors.
+
+   function From_Exception (E : Exception_Occurrence) return Assert_Error;
+   --  Create from the information contained in the exception
+
+   --------------
+   -- Generics --
+   --------------
+   --  The following API provides convenient ways to perform tests and raise
+   --  appropriate exceptions. A number of predefined instances are provided
+   --  in the BDD.Asserts package.
 
    generic
       type T (<>) is limited private;
       with function Image (V : T) return String;
       with function Operator (V1, V2 : T) return Boolean;
-      Operator_Image : String;
+      Not_Operator_Image : String;
 
    package Asserts is
 
@@ -65,5 +143,18 @@ package BDD.Asserts_Generic is
       --  the error occurred.
 
    end Asserts;
+
+private
+
+   type Error_Details is new Refcounted with record
+      Details  : Unbounded_String;
+      Msg      : Unbounded_String;
+      Location : Unbounded_String;
+   end record;
+
+   package Errors is new GNATCOLL.Refcount.Smart_Pointers (Error_Details);
+   type Assert_Error is new Errors.Ref with null record;
+
+   No_Error : constant Assert_Error := (Errors.Null_Ref with null record);
 
 end BDD.Asserts_Generic;

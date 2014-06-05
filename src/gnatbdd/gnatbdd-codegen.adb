@@ -520,6 +520,8 @@ package body Gnatbdd.Codegen is
          end loop;
       end if;
 
+      Object_Dir.Make_Dir (Recursive => True);
+
       Create (F, Out_File,
               Create_From_Dir
                 (Object_Dir, +Driver & ".adb").Display_Full_Name);

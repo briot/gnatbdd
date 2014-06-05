@@ -9,6 +9,7 @@ GNAT Behavior Driven Development
 .. toctree::
    :maxdepth: 2
 
+   tutorial
    bdd
    features
    steps

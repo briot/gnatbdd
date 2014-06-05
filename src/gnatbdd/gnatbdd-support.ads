@@ -35,6 +35,7 @@ package Gnatbdd.Support is
    type Configuration is record
       Project_Name : GNATCOLL.VFS.Virtual_File;
       Steps_Dirs   : GNATCOLL.VFS.File_Array_Access;
+      Driver       : GNAT.Strings.String_Access := new String'("driver");
    end record;
    --  Various configurations from the command line
 

@@ -38,6 +38,7 @@ package Gnatbdd.Codegen is
       Extension        : Filesystem_String := ".ads";
       Object_Dir       : GNATCOLL.VFS.Virtual_File;
       Tree             : GNATCOLL.Projects.Project_Tree;
+      Driver           : String;
       Extra_Steps_Dirs : GNATCOLL.VFS.File_Array_Access);
    --  Parse all specs in the project's source directories or in
    --  Extra_Steps_Dirs, to find the definition of steps.

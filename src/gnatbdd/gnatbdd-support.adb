@@ -68,6 +68,12 @@ package body Gnatbdd.Support is
          Long_Switch => "--steps=",
          Argument    => "DIR",
          Help        => "Specify a directory to search for step definitions");
+
+      Define_Switch
+        (Config,
+         Long_Switch => "--driver=",
+         Argument    => "NAME",
+         Help        => "Name of the generated driver");
    end Setup_Command_Line_Switches;
 
    ------------------------
@@ -105,6 +111,10 @@ package body Gnatbdd.Support is
                   Error ("Project file not found");
                end if;
             end if;
+
+         elsif Switch = "--driver" then
+            Free (Result.Driver);
+            Result.Driver := new String'(Parameter);
          end if;
       end On_Switch;
 

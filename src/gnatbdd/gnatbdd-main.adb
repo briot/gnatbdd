@@ -79,6 +79,7 @@ begin
          Extension        => +Ads_Extension,
          Object_Dir       => Tree.Root_Project.Object_Dir,
          Tree             => Tree,
+         Driver           => Setup.Driver.all,
          Extra_Steps_Dirs => Setup.Steps_Dirs);
    end;
 

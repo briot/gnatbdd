@@ -481,6 +481,7 @@ package body Gnatbdd.Codegen is
       Extension        : Filesystem_String := ".ads";
       Object_Dir       : GNATCOLL.VFS.Virtual_File;
       Tree             : GNATCOLL.Projects.Project_Tree;
+      Driver           : String;
       Extra_Steps_Dirs : GNATCOLL.VFS.File_Array_Access)
    is
       Files : File_Array_Access;
@@ -520,7 +521,8 @@ package body Gnatbdd.Codegen is
       end if;
 
       Create (F, Out_File,
-              Create_From_Dir (Object_Dir, "driver.adb").Display_Full_Name);
+              Create_From_Dir
+                (Object_Dir, +Driver & ".adb").Display_Full_Name);
       Put_Line (F, "--  Automatically generated");
       Put_Line (F, "with BDD;          use BDD;");
       Put_Line (F, "with BDD.Main;     use BDD.Main;");
@@ -528,7 +530,7 @@ package body Gnatbdd.Codegen is
       Put_Line (F, "with BDD.Runner;   use BDD.Runner;");
       Put_Line (F, "with GNAT.Regpat;  use GNAT.Regpat;");
       Put_Line (F, To_String (Data.Withs));
-      Put_Line (F, "procedure Driver is");
+      Put_Line (F, "procedure " & Driver & " is");
       New_Line (F);
       Put_Line (F, To_String (Data.Regexps));
       Put_Line (F, "   procedure Run_Steps");
@@ -559,18 +561,19 @@ package body Gnatbdd.Codegen is
       Put_Line
         (F, "   Runner.Add_Step_Runner (Run_Steps'Unrestricted_Access);");
       Put_Line (F, "   BDD.Main.Main (Runner);");
-      Put_Line (F, "end Driver;");
+      Put_Line (F, "end " & Driver & ";");
       Close (F);
 
       Create (F, Out_File,
-              Create_From_Dir (Object_Dir, "driver.gpr").Display_Full_Name);
+              Create_From_Dir
+                (Object_Dir, +Driver & ".gpr").Display_Full_Name);
       Put_Line (F, "with ""gnatcoll"";");
       Put_Line (F, "with ""gnatbdd"";");
       Put_Line (F, "with """
                 & Tree.Root_Project.Project_Path.Display_Full_Name
                 & """;");
-      Put_Line (F, "project Driver is");
-      Put_Line (F, "   for Main use (""driver.adb"");");
+      Put_Line (F, "project " & Driver & " is");
+      Put_Line (F, "   for Main use (""" & Driver & ".adb"");");
       Put (F, "   for Source_Dirs use ("".""");
 
       if Extra_Steps_Dirs /= null then
@@ -589,7 +592,7 @@ package body Gnatbdd.Codegen is
       Put_Line (F, "   package Compiler is");
       Put_Line (F, "      for Switches (""Ada"") use (""-g"");");
       Put_Line (F, "   end Compiler;");
-      Put_Line (F, "end Driver;");
+      Put_Line (F, "end " & Driver & ";");
       Close (F);
    end Discover_Steps;
 

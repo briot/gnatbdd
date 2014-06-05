@@ -22,10 +22,10 @@
 ------------------------------------------------------------------------------
 
 with BDD.Formatters;    use BDD.Formatters;
+with BDD.Media;         use BDD.Media;
 with BDD.Parser;        use BDD.Parser;
 with BDD.Runner;        use BDD.Runner;
 with GNAT.Command_Line; use GNAT.Command_Line;
-with GNATCOLL.Terminal; use GNATCOLL.Terminal;
 with GNATCOLL.Traces;   use GNATCOLL.Traces;
 
 package body BDD.Main is
@@ -37,16 +37,24 @@ package body BDD.Main is
    procedure Main (Self : in out BDD.Runner.Feature_Runner) is
       Parser   : BDD.Parser.Feature_Parser;
       Format   : access BDD.Formatters.Formatter'Class;
-      Term     : constant Terminal_Info_Access := new Terminal_Info;
+      Media    : Media_Writer_Access;
    begin
       GNATCOLL.Traces.Parse_Config_File;
       BDD.Command_Line_Switches;
 
       Self.Discover (+BDD.Features_File_Ext.all, BDD.Features_Directory);
 
-      Term.Init_For_Stdout (Colors => BDD.Colors);
       Format := BDD.Formatters.Create_Formatter;
-      Format.Init (Term);
+
+      if BDD.Output_File = No_File then
+         Media := Open_Stdout;
+      elsif BDD.Output_File.File_Extension = ".html" then
+         Media  := Open_HTML (Open_File (BDD.Output_File));
+      else
+         Media := Open_File (BDD.Output_File);
+      end if;
+
+      Format.Init (Media);
 
       Self.Run (Format, Parser);
 

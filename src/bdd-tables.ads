@@ -26,9 +26,8 @@
 
 with Ada.Containers.Indefinite_Vectors;
 with Ada.Containers.Vectors;
-with Ada.Text_IO;          use Ada.Text_IO;
+with BDD.Media;            use BDD.Media;
 with GNATCOLL.Refcount;    use GNATCOLL.Refcount;
-with GNATCOLL.Terminal;    use GNATCOLL.Terminal;
 
 package BDD.Tables is
 
@@ -87,7 +86,9 @@ package BDD.Tables is
    --  Return the size of the table
 
    procedure Display
-     (Self : Table; File : Ada.Text_IO.File_Type; Prefix : String := "");
+     (Self   : Table;
+      Output : not null access BDD.Media.Media_Writer'Class;
+      Prefix : String := "");
    --  Display the table in File.
    --  Each line is lead by a Prefix.
 

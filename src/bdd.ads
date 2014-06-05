@@ -76,6 +76,9 @@ package BDD is
      GNATCOLL.Terminal.Blue;
    --  Color used to highlight the parenthesis groups in steps
 
+   Output_File : Virtual_File;
+   --  Where we should send the output
+
    procedure Command_Line_Switches;
    --  Handles the command line switches
 

@@ -52,6 +52,9 @@ package body BDD is
                BDD.Colors := GNATCOLL.Terminal.Auto;
             end if;
 
+         elsif Switch = "-o" then
+            BDD.Output_File := Create_From_Base (+Parameter);
+
          elsif Switch = "--output" then
             if Parameter = "quiet" then
                BDD.Output := Output_Quiet;
@@ -113,6 +116,13 @@ package body BDD is
          Long_Switch => "--output=",
          Argument    => "format",
          Help   => "Controls the output format (quiet|DOTS|hide_passed|full)");
+
+      Define_Switch
+        (Config,
+         Switch => "-o=",
+         Argument    => "file",
+         Help   => "Where the output should be sent (stdout by default)."
+           & " If the extension is .html, the output is HTML.");
 
       Define_Switch
         (Config,

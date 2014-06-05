@@ -133,3 +133,9 @@ For the compilation to succeed, GNATbdd needs to find where the sources of the
 steps are (see the :option:`--steps` switch), as well as all the sources on
 which they depend. Such sources are found via a GNAT Project file, which can
 be specified with the :option:`-P PROJECT.gpr` switch.
+
+Exit status
+===========
+
+On exit, the driver will set its status to the number of failed scenarios.
+As a result, it is easy to check whether there are any unexpected failures.

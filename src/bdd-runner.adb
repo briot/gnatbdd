@@ -21,6 +21,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Command_Line;  use Ada.Command_Line;
+
 package body BDD.Runner is
 
    --------------
@@ -85,6 +87,9 @@ package body BDD.Runner is
 
          Self.Run_End;
          Self.Format := null;
+
+         Set_Exit_Status
+           (Exit_Status (Self.Scenario_Stats (Status_Failed)));
       end if;
    end Run;
 

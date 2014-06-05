@@ -25,10 +25,9 @@
 
 with Ada.Exceptions;        use Ada.Exceptions;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
-with Ada.Text_IO;           use Ada.Text_IO;
+with BDD.Media;             use BDD.Media;
 with GNAT.Source_Info;
 with GNATCOLL.Refcount;     use GNATCOLL.Refcount;
-with GNATCOLL.Terminal;     use GNATCOLL.Terminal;
 
 package BDD.Asserts_Generic is
 
@@ -102,13 +101,13 @@ package BDD.Asserts_Generic is
 
    procedure Display
      (Self   : Assert_Error;
-      Term   : not null access GNATCOLL.Terminal.Terminal_Info'Class;
-      File   : Ada.Text_IO.File_Type;
+      Output : not null access BDD.Media.Media_Writer'Class;
+      Status : Scenario_Status;
       Prefix : String := "");
    procedure Display
      (Self   : not null access Error_Details;
-      Term   : not null access GNATCOLL.Terminal.Terminal_Info'Class;
-      File   : Ada.Text_IO.File_Type;
+      Output : not null access BDD.Media.Media_Writer'Class;
+      Status : Scenario_Status;
       Prefix : String := "");
    --  Display the details on File, using Term to set appropriate colors.
 

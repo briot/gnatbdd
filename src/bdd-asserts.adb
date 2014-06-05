@@ -22,8 +22,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
-with Ada.Text_IO;       use Ada.Text_IO;
-with GNATCOLL.Terminal; use GNATCOLL.Terminal;
+with BDD.Media;         use BDD.Media;
 with GNATCOLL.Traces;   use GNATCOLL.Traces;
 
 package body BDD.Asserts is
@@ -36,8 +35,8 @@ package body BDD.Asserts is
 
    overriding procedure Display
      (Self   : not null access Error_With_Table;
-      Term   : not null access GNATCOLL.Terminal.Terminal_Info'Class;
-      File   : Ada.Text_IO.File_Type;
+      Output : not null access Media_Writer'Class;
+      Status : Scenario_Status;
       Prefix : String := "");
 
    procedure Diff
@@ -179,10 +178,11 @@ package body BDD.Asserts is
 
    overriding procedure Display
      (Self   : not null access Error_With_Table;
-      Term   : not null access GNATCOLL.Terminal.Terminal_Info'Class;
-      File   : Ada.Text_IO.File_Type;
+      Output : not null access Media_Writer'Class;
+      Status : Scenario_Status;
       Prefix : String := "")
    is
+      pragma Unreferenced (Status);
       Current_Row : Integer := -1;
       Widths : array (1 .. Self.Val1.Width) of Natural := (others => 0);
 
@@ -199,6 +199,7 @@ package body BDD.Asserts is
          E, A               : String;
          Status             : Scenario_Status) return Boolean
       is
+         pragma Unreferenced (Row);
          W : Integer;
       begin
          if Status = Status_Failed then
@@ -223,44 +224,39 @@ package body BDD.Asserts is
          E, A               : String;
          Status             : Scenario_Status) return Boolean
       is
-         W : Integer := 0;
       begin
          if Row /= 1 and then Row /= Current_Row then
-            Put_Line (File, "|");
+            Output.End_Row;
          end if;
 
          if Row /= Current_Row then
             Current_Row := Row;
-            Put (File, Prefix);
+            Output.Start_Row (Indent => Prefix);
          end if;
-
-         Term.Set_Color
-           (Term       => Ada.Text_IO.Standard_Output,
-            Style      => Reset_All);
-         Put (File, "| ");
-
-         Term.Set_Color
-           (Term       => File,
-            Foreground => BDD.Step_Colors (Status));
-         Put (File, A);
-         W := W + A'Length;
 
          if Status = Status_Failed then
-            Term.Set_Color
-              (Term       => File,
-               Foreground => BDD.Config_Color);
-            Put (File, " /= " & E);
-            W := W + 4 + E'Length;
+            Output.Display_Cell
+              (A & " /= " & E,
+               Cell_Width => Widths (Column_In_Expected),
+               Header     => False,
+               Status     => Status);
+         else
+            Output.Display_Cell
+              (A,
+               Cell_Width => Widths (Column_In_Expected),
+               Header     => False,
+               Status     => Status);
          end if;
-
-         Put (File, (1 .. Widths (Column_In_Expected) - W + 1 => ' '));
          return True;
       end On_Cell;
 
    begin
       Diff (Self.Val1, Self.Val2, On_Error'Access, Compute_Width'Access);
+
+      Output.Start_Table;
       Diff (Self.Val1, Self.Val2, On_Error'Access, On_Cell'Access);
-      Put_Line (File, "|");
+      Output.End_Row;
+      Output.End_Table;
    end Display;
 
 end BDD.Asserts;

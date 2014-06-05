@@ -211,7 +211,9 @@ package body BDD.Tables is
    -------------
 
    procedure Display
-     (Self : Table; File : Ada.Text_IO.File_Type; Prefix : String := "")
+     (Self   : Table;
+      Output : not null access BDD.Media.Media_Writer'Class;
+      Prefix : String := "")
    is
       R : constant access Table_Record := Self.Get;
       W : constant Integer := Self.Width;
@@ -234,31 +236,31 @@ package body BDD.Tables is
          end loop;
       end loop;
 
-      Put (File, Prefix);
+      Output.Start_Table;
+      Output.Start_Row (Indent => Prefix);
+
       Idx := Widths'First;
       for N of R.Names loop
-         Put (File, "| "
-              & N
-              & (1 .. Widths (Idx) - N'Length => ' ')
-              & " ");
+         Output.Display_Cell (N, Cell_Width => Widths (Idx), Header => True);
          Idx := Idx + 1;
       end loop;
-      Put_Line (File, "|");
+
+      Output.End_Row;
 
       for Row_Content of R.Rows loop
-         Put (File, Prefix);
+         Output.Start_Row (Indent => Prefix);
 
          Idx := Widths'First;
          for V of Row_Content loop
-            Put (File, "| "
-                 & V
-                 & (1 .. Widths (Idx) - V'Length => ' ')
-                 & " ");
+            Output.Display_Cell
+              (V, Cell_Width => Widths (Idx), Header => False);
             Idx := Idx + 1;
          end loop;
 
-         Put_Line (File, "|");
+         Output.End_Row;
       end loop;
+
+      Output.End_Table;
    end Display;
 
 end BDD.Tables;

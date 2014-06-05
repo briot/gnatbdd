@@ -21,8 +21,6 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with BDD.Formatters;        use BDD.Formatters;
-
 package body BDD.Asserts_Generic is
 
    Current_Exception : Assert_Error := No_Error;
@@ -90,12 +88,12 @@ package body BDD.Asserts_Generic is
 
    procedure Display
      (Self   : Assert_Error;
-      Term   : not null access GNATCOLL.Terminal.Terminal_Info'Class;
-      File   : Ada.Text_IO.File_Type;
+      Output : not null access BDD.Media.Media_Writer'Class;
+      Status : Scenario_Status;
       Prefix : String := "")
    is
    begin
-      Display (Self.Details, Term, File, Prefix);
+      Display (Self.Details, Output, Status, Prefix);
    end Display;
 
    -------------
@@ -104,28 +102,30 @@ package body BDD.Asserts_Generic is
 
    procedure Display
      (Self   : not null access Error_Details;
-      Term   : not null access GNATCOLL.Terminal.Terminal_Info'Class;
-      File   : Ada.Text_IO.File_Type;
+      Output : not null access BDD.Media.Media_Writer'Class;
+      Status : Scenario_Status;
       Prefix : String := "")
    is
-      pragma Unreferenced (Term);
    begin
+      Output.Start_Step_Messages (Status => Status);
+
       if Self.Msg /= "" then
-         Indent (File, To_String (Self.Msg), Prefix => Prefix);
+         Output.Indent (To_String (Self.Msg), Prefix => Prefix);
          if Element (Self.Msg, Length (Self.Msg)) /= ASCII.LF then
-            New_Line (File);
+            Output.New_Line;
          end if;
       end if;
 
       if Self.Details /= "" then
-         Indent (File, To_String (Self.Details), Prefix => Prefix);
+         Output.Indent (To_String (Self.Details), Prefix => Prefix);
          if Element (Self.Details, Length (Self.Details)) /= ASCII.LF then
-            New_Line (File);
+            Output.New_Line;
          end if;
       end if;
 
-      Indent (File, To_String (Self.Location), Prefix => Prefix);
-      New_Line (File);
+      Output.Indent (To_String (Self.Location), Prefix => Prefix);
+      Output.New_Line;
+      Output.End_Step_Messages;
    end Display;
 
    --------------------

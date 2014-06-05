@@ -21,12 +21,13 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  The formatters are used to display output for the user
+--  The formatters are used to prepare the output for the user.
+--  They do not perform the actual output, which is done via BDD.Media, in
+--  various formats.
 
-with Ada.Text_IO;
 private with Ada.Containers.Doubly_Linked_Lists;
 with BDD.Features;      use BDD.Features;
-with GNATCOLL.Terminal; use GNATCOLL.Terminal;
+with BDD.Media;         use BDD.Media;
 
 package BDD.Formatters is
 
@@ -34,9 +35,8 @@ package BDD.Formatters is
 
    procedure Init
      (Self    : in out Formatter;
-      Term    : GNATCOLL.Terminal.Terminal_Info_Access);
-   --  Prepare the output for a specific terminal.
-   --  This controls, among other things, whether the output supports colors.
+      Output  : not null access Media_Writer'Class);
+   --  Prepare the output for a specific media.
 
    procedure Scenario_Start
      (Self     : in out Formatter;
@@ -147,24 +147,13 @@ package BDD.Formatters is
      (Self     : in out Formatter_Hide_Passed;
       Scenario : BDD.Features.Scenario);
 
-   -----------
-   -- Utils --
-   -----------
-
-   procedure Indent
-     (File   : Ada.Text_IO.File_Type;
-      Text   : String;
-      Prefix : String := "");
-   --  Print a multi-line text so that each line is indented by Prefix
-
 private
    package Scenario_Lists is new Ada.Containers.Doubly_Linked_Lists
      (BDD.Features.Scenario);
 
    type Formatter is abstract tagged record
-      Term                      : GNATCOLL.Terminal.Terminal_Info_Access;
       Last_Displayed_Feature_Id : Integer := -1;
-      Progress_Displayed        : Boolean := False;
+      Output                    : access Media_Writer'Class;
    end record;
 
    type Formatter_Full  is new Formatter with null record;

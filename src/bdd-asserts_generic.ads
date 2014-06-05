@@ -92,7 +92,7 @@ package BDD.Asserts_Generic is
    --  Location and Entity are used to point to the code location where the
    --  error is raised.
 
-   procedure Raise_Exception (Self : not null access Error_Details);
+   procedure Raise_Exception (Self : not null access Error_Details'Class);
    pragma No_Return (Raise_Exception);
    --  Wraps Self in an Assert_Error, and raise the Unexpected_Result
    --  exception.
@@ -114,6 +114,13 @@ package BDD.Asserts_Generic is
    function From_Exception (E : Exception_Occurrence) return Assert_Error;
    --  Create from the information contained in the exception
 
+   procedure Raise_From_Msg
+     (Msg, Details : String;
+      Location : String := GNAT.Source_Info.Source_Location;
+      Entity   : String := GNAT.Source_Info.Enclosing_Entity);
+   pragma No_Return (Raise_From_Msg);
+   --  Convenient wrapper that creates the exception and raises it
+
    --------------
    -- Generics --
    --------------
@@ -126,7 +133,6 @@ package BDD.Asserts_Generic is
       with function Image (V : T) return String;
       with function Operator (V1, V2 : T) return Boolean;
       Not_Operator_Image : String;
-
    package Asserts is
 
       procedure Assert
@@ -134,7 +140,7 @@ package BDD.Asserts_Generic is
          Msg        : String := "";
          Location   : String := GNAT.Source_Info.Source_Location;
          Entity     : String := GNAT.Source_Info.Enclosing_Entity);
-      --  Compare two elements for equality.
+      --  Compare two elements with the given operator.
       --  You could provide a detailed message through Msg, which will help
       --  understand the error later on.
       --  You are not expected to provide actual values for Location and
@@ -142,6 +148,47 @@ package BDD.Asserts_Generic is
       --  the error occurred.
 
    end Asserts;
+
+   generic
+      type T (<>) is limited private;
+      with function Image (V : T) return String;
+      with function "=" (V1, V2 : T) return Boolean is <>;
+      with function "<" (V1, V2 : T) return Boolean is <>;
+      with function "<=" (V1, V2 : T) return Boolean is <>;
+   package Asserts_Simple is
+      procedure Assert
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity);
+      procedure Assert_Not_Equal
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity);
+      procedure Assert_Less_Than
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity);
+      procedure Assert_Greater_Than
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity);
+      procedure Assert_Less_Or_Equal
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity);
+      procedure Assert_Greater_Or_Equal
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity);
+      --  Compare two elements.
+
+   end Asserts_Simple;
 
 private
 

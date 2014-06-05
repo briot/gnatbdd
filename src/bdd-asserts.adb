@@ -26,6 +26,10 @@ with BDD.Media;         use BDD.Media;
 with GNATCOLL.Traces;   use GNATCOLL.Traces;
 
 package body BDD.Asserts is
+   -----------------
+   -- BDD.Asserts --
+   -----------------
+
    Me : constant Trace_Handle := Create ("BDD.ASSERTS");
 
    type Error_With_Table is new Error_Details with record
@@ -52,6 +56,26 @@ package body BDD.Asserts is
    --  the expected table.
    --  When On_Cell returns False, stops iterating.
    --  On_Error is called when the diff could not be completed
+
+   ------------
+   -- Assert --
+   ------------
+
+   procedure Assert
+     (Val : Boolean;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+   is
+   begin
+      if not Val then
+         Raise_From_Msg
+           (Msg      => Msg,
+            Details  => "",
+            Location => Location,
+            Entity   => Entity);
+      end if;
+   end Assert;
 
    ----------
    -- Diff --

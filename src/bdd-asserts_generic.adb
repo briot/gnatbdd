@@ -73,7 +73,7 @@ package body BDD.Asserts_Generic is
    -- Raise_Exception --
    ---------------------
 
-   procedure Raise_Exception (Self : not null access Error_Details) is
+   procedure Raise_Exception (Self : not null access Error_Details'Class) is
    begin
       Current_Exception.Set (Self);
 
@@ -141,6 +141,25 @@ package body BDD.Asserts_Generic is
       return Result;
    end From_Exception;
 
+   --------------------
+   -- Raise_From_Msg --
+   --------------------
+
+   procedure Raise_From_Msg
+     (Msg, Details : String;
+      Location : String := GNAT.Source_Info.Source_Location;
+      Entity   : String := GNAT.Source_Info.Enclosing_Entity)
+   is
+      Error : constant Error_Details_Access := new Error_Details;
+   begin
+      Error.Set_Details
+        (Msg     => Msg,
+         Details => Details,
+         Location => Location,
+         Entity   => Entity);
+      Error.Raise_Exception;
+   end Raise_From_Msg;
+
    -------------
    -- Asserts --
    -------------
@@ -157,19 +176,144 @@ package body BDD.Asserts_Generic is
          Location   : String := GNAT.Source_Info.Source_Location;
          Entity     : String := GNAT.Source_Info.Enclosing_Entity)
       is
-         Error : Error_Details_Access;
       begin
          if not Operator (Val1, Val2) then
-            Error := new Error_Details;
-            Error.Set_Details
+            Raise_From_Msg
               (Msg     => Msg,
                Details =>
                  Image (Val1) & ' ' & Not_Operator_Image & ' ' & Image (Val2),
                Location => Location,
                Entity   => Entity);
-            Error.Raise_Exception;
          end if;
       end Assert;
    end Asserts;
+
+   --------------------
+   -- Asserts_Simple --
+   --------------------
+
+   package body Asserts_Simple is
+
+      ------------
+      -- Assert --
+      ------------
+
+      procedure Assert
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      is
+      begin
+         if not (Val1 = Val2) then
+            Raise_From_Msg
+              (Msg     => Msg,
+               Details => Image (Val1) & " /= " & Image (Val2),
+               Location => Location,
+               Entity   => Entity);
+         end if;
+      end Assert;
+
+      ----------------------
+      -- Assert_Not_Equal --
+      ----------------------
+
+      procedure Assert_Not_Equal
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      is
+      begin
+         if Val1 = Val2 then
+            Raise_From_Msg
+              (Msg     => Msg,
+               Details => Image (Val1) & " = " & Image (Val2),
+               Location => Location,
+               Entity   => Entity);
+         end if;
+      end Assert_Not_Equal;
+
+      ----------------------
+      -- Assert_Less_Than --
+      ----------------------
+
+      procedure Assert_Less_Than
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      is
+      begin
+         if not (Val1 < Val2) then
+            Raise_From_Msg
+              (Msg     => Msg,
+               Details => Image (Val1) & " >= " & Image (Val2),
+               Location => Location,
+               Entity   => Entity);
+         end if;
+      end Assert_Less_Than;
+
+      --------------------------
+      -- Assert_Less_Or_Equal --
+      --------------------------
+
+      procedure Assert_Less_Or_Equal
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      is
+      begin
+         if not (Val1 <= Val2) then
+            Raise_From_Msg
+              (Msg     => Msg,
+               Details => Image (Val1) & " > " & Image (Val2),
+               Location => Location,
+               Entity   => Entity);
+         end if;
+      end Assert_Less_Or_Equal;
+
+      -------------------------
+      -- Assert_Greater_Than --
+      -------------------------
+
+      procedure Assert_Greater_Than
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      is
+      begin
+         if Val1 <= Val2 then
+            Raise_From_Msg
+              (Msg     => Msg,
+               Details => Image (Val1) & " <= " & Image (Val2),
+               Location => Location,
+               Entity   => Entity);
+         end if;
+      end Assert_Greater_Than;
+
+      -----------------------------
+      -- Assert_Greater_Or_Equal --
+      -----------------------------
+
+      procedure Assert_Greater_Or_Equal
+        (Val1, Val2 : T;
+         Msg        : String := "";
+         Location   : String := GNAT.Source_Info.Source_Location;
+         Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      is
+      begin
+         if Val1 < Val2 then
+            Raise_From_Msg
+              (Msg     => Msg,
+               Details => Image (Val1) & " < " & Image (Val2),
+               Location => Location,
+               Entity   => Entity);
+         end if;
+      end Assert_Greater_Or_Equal;
+
+   end Asserts_Simple;
 
 end BDD.Asserts_Generic;

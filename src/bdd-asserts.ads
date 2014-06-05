@@ -33,33 +33,125 @@ with GNAT.Source_Info;
 package BDD.Asserts is
    package BAG renames BDD.Asserts_Generic;
 
-   package Integer_Equals
-      is new BAG.Asserts (Integer, Integer'Image, "=", "/=");
+   --------------
+   -- Booleans --
+   --------------
+
+   procedure Assert
+     (Val : Boolean;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity);
+
+   --------------
+   -- Integers --
+   --------------
+
+   package Integers is new BAG.Asserts_Simple (Integer, Integer'Image);
+
    procedure Assert
      (Val1, Val2 : Integer;
       Msg : String := "";
       Location   : String := GNAT.Source_Info.Source_Location;
       Entity     : String := GNAT.Source_Info.Enclosing_Entity)
-      renames Integer_Equals.Assert;
-
-   package Integer_Less_Than
-      is new BAG.Asserts (Integer, Integer'Image, "<", ">=");
+      renames Integers.Assert;
+   procedure Assert_Not_Equal
+     (Val1, Val2 : Integer;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Integers.Assert_Not_Equal;
    procedure Assert_Less_Than
      (Val1, Val2 : Integer;
       Msg : String := "";
       Location   : String := GNAT.Source_Info.Source_Location;
       Entity     : String := GNAT.Source_Info.Enclosing_Entity)
-      renames Integer_Less_Than.Assert;
+      renames Integers.Assert_Less_Than;
+   procedure Assert_Greater_Than
+     (Val1, Val2 : Integer;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Integers.Assert_Greater_Than;
+   procedure Assert_Less_Or_Equal
+     (Val1, Val2 : Integer;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Integers.Assert_Less_Or_Equal;
+   procedure Assert_Greater_Or_Equal
+     (Val1, Val2 : Integer;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Integers.Assert_Greater_Or_Equal;
+
+   ------------
+   -- Floats --
+   ------------
+
+   package Floats   is new BAG.Asserts_Simple (Float, Float'Image);
+
+   procedure Assert
+     (Val1, Val2 : Float;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Floats.Assert;
+   procedure Assert_Not_Equal
+     (Val1, Val2 : Float;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Floats.Assert_Not_Equal;
+   procedure Assert_Less_Than
+     (Val1, Val2 : Float;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Floats.Assert_Less_Than;
+   procedure Assert_Greater_Than
+     (Val1, Val2 : Float;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Floats.Assert_Greater_Than;
+   procedure Assert_Less_Or_Equal
+     (Val1, Val2 : Float;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Floats.Assert_Less_Or_Equal;
+   procedure Assert_Greater_Or_Equal
+     (Val1, Val2 : Float;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Floats.Assert_Greater_Or_Equal;
+
+   -------------
+   -- Strings --
+   -------------
 
    function Identity (Str : String) return String is (Str);
-   package String_Equals
-      is new BAG.Asserts (String, Identity, "=", "/=");
+   package Strings is new BAG.Asserts_Simple (String, Identity);
+
    procedure Assert
      (Val1, Val2 : String;
       Msg : String := "";
       Location   : String := GNAT.Source_Info.Source_Location;
       Entity     : String := GNAT.Source_Info.Enclosing_Entity)
-      renames String_Equals.Assert;
+      renames Strings.Assert;
+   procedure Assert_Not_Equal
+     (Val1, Val2 : String;
+      Msg : String := "";
+      Location   : String := GNAT.Source_Info.Source_Location;
+      Entity     : String := GNAT.Source_Info.Enclosing_Entity)
+      renames Strings.Assert_Not_Equal;
+
+   ------------
+   -- Tables --
+   ------------
 
    procedure Assert
      (Expected, Actual : BDD.Tables.Table;

@@ -23,7 +23,10 @@
 
 --  Support for code generation (detecting user-defined steps,...)
 
-package BDD.Codegen is
+with GNATCOLL.Projects; use GNATCOLL.Projects;
+with GNATCOLL.VFS;      use GNATCOLL.VFS;
+
+package Gnatbdd.Codegen is
 
    type Steps_Finder is tagged private;
 
@@ -31,13 +34,16 @@ package BDD.Codegen is
    --  Free memory used by Self
 
    procedure Discover_Steps
-     (Self      : in out Steps_Finder;
-      Extension : Filesystem_String := ".ads";
-      Directory : GNATCOLL.VFS.Virtual_File);
-   --  Find all Ada files that contain step definitions
+     (Self             : in out Steps_Finder;
+      Extension        : Filesystem_String := ".ads";
+      Object_Dir       : GNATCOLL.VFS.Virtual_File;
+      Tree             : GNATCOLL.Projects.Project_Tree;
+      Extra_Steps_Dirs : GNATCOLL.VFS.File_Array_Access);
+   --  Parse all specs in the project's source directories or in
+   --  Extra_Steps_Dirs, to find the definition of steps.
 
 private
    type Steps_Finder is tagged record
       Files : GNATCOLL.VFS.File_Array_Access;
    end record;
-end BDD.Codegen;
+end Gnatbdd.Codegen;

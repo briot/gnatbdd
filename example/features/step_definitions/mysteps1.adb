@@ -4,11 +4,6 @@ with Calculator;   use Calculator;
 
 package body MySteps1 is
 
-   procedure Given_An_Empty_Calculator is
-   begin
-      Reset;
-   end Given_An_Empty_Calculator;
-
    procedure When_I_Enter (Value : String) is
    begin
       Enter (Value);

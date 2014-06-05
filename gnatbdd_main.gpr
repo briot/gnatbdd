@@ -1,9 +1,10 @@
 with "gnatcoll";
+with "src/gnatbdd.gpr";
 
-project GNATBDD is
-   for Main use ("gnatbdd.adb");
+project GNATBDD_Main is
+   for Main use ("gnatbdd-main.adb");
    for Languages use ("Ada");
-   for Source_Dirs use ("src");
+   for Source_Dirs use ("src/gnatbdd/");
    for Object_Dir use "obj";
 
    package Compiler is
@@ -12,7 +13,11 @@ project GNATBDD is
                                 "-gnateE");
    end Compiler;
 
+   package Builder is
+      for Executable ("gnatbdd-main.adb") use "gnatbdd";
+   end Builder;
+
    package Binder is
       for Switches ("Ada") use ("-E");
    end Binder;
-end GNATBDD;
+end GNATBDD_Main;

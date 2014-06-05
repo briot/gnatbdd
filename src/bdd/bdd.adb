@@ -1,5 +1,5 @@
------------------------------------------------------------------------------
---                             g N A T C O L L                              --
+------------------------------------------------------------------------------
+--                             G N A T C O L L                              --
 --                                                                          --
 --                     Copyright (C) 2005-2014, AdaCore                     --
 --                                                                          --
@@ -75,8 +75,8 @@ package body BDD is
    begin
       Set_Usage
         (Config,
-         Usage       => "[switches] [file:line1:line2] [file#num1#num2]",
-         Help        =>
+         Usage  => "[switches] [file:line1:line2] [file#num1#num2]",
+         Help   =>
            "Run each of the scenario defined in features files.");
 
       Define_Switch

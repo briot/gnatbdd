@@ -26,10 +26,11 @@ with Ada.Strings.Unbounded;   use Ada.Strings.Unbounded;
 with Ada.Unchecked_Deallocation;
 with Ada.Text_IO;             use Ada.Text_IO;
 with GNAT.Regpat;             use GNAT.Regpat;
+with GNAT.Strings;            use GNAT.Strings;
 with GNATCOLL.Traces;         use GNATCOLL.Traces;
 with GNATCOLL.Utils;          use GNATCOLL.Utils;
 
-package body BDD.Codegen is
+package body Gnatbdd.Codegen is
    Me : constant Trace_Handle := Create ("BDD.CODEGEN");
 
    Cst_Procedure  : constant String := "procedure ";
@@ -476,24 +477,50 @@ package body BDD.Codegen is
    --------------------
 
    procedure Discover_Steps
-     (Self      : in out Steps_Finder;
-      Extension : Filesystem_String := ".ads";
-      Directory : GNATCOLL.VFS.Virtual_File)
+     (Self             : in out Steps_Finder;
+      Extension        : Filesystem_String := ".ads";
+      Object_Dir       : GNATCOLL.VFS.Virtual_File;
+      Tree             : GNATCOLL.Projects.Project_Tree;
+      Extra_Steps_Dirs : GNATCOLL.VFS.File_Array_Access)
    is
-      Files : File_Array_Access := Directory.Read_Dir_Recursive
-        (Extension => Extension, Filter => Files_Only);
-      Data        : Generated_Data;
-      F : File_Type;
-   begin
-      if Files /= null then
-         for F in Files'Range loop
-            Check_Steps (Self, File => Files (F), Data => Data);
-         end loop;
+      Files : File_Array_Access;
+      Data  : Generated_Data;
+      F     : File_Type;
+      Sources : File_And_Project_Array_Access :=
+        Tree.Root_Project.Source_Files (Recursive => True);
+      Set     : File_Info_Set;
 
-         Unchecked_Free (Files);
+   begin
+      --  Parse project source files
+      if Sources /= null then
+         for F in Sources'Range loop
+            Set := Tree.Info_Set (Sources (F).File);
+            for S of Set loop
+               if File_Info (S).Project = Sources (F).Project
+                 and then File_Info (S).Unit_Part = Unit_Spec
+               then
+                  Check_Steps (Self, File => Sources (F).File, Data => Data);
+               end if;
+            end loop;
+         end loop;
+         Free (Sources);
       end if;
 
-      Create (F, Out_File, "obj/driver.adb");
+      if Extra_Steps_Dirs /= null then
+         for D in Extra_Steps_Dirs'Range loop
+            Files := Extra_Steps_Dirs (D).Read_Dir_Recursive
+              (Extension => Extension, Filter => Files_Only);
+            if Files /= null then
+               for F in Files'Range loop
+                  Check_Steps (Self, File => Files (F), Data => Data);
+               end loop;
+               Unchecked_Free (Files);
+            end if;
+         end loop;
+      end if;
+
+      Create (F, Out_File,
+              Create_From_Dir (Object_Dir, "driver.adb").Display_Full_Name);
       Put_Line (F, "--  Automatically generated");
       Put_Line (F, "with BDD;          use BDD;");
       Put_Line (F, "with BDD.Main;     use BDD.Main;");
@@ -516,9 +543,15 @@ package body BDD.Codegen is
                 & ");");
       Put_Line (F, "   begin");
       Put (F, To_String (Data.Matchers));
-      Put_Line (F, "      else");
-      Put_Line (F, "         Step.Set_Status (Status_Undefined);");
-      Put_Line (F, "      end if;");
+
+      if Data.Matchers /= "" then
+         Put_Line (F, "      else");
+         Put_Line (F, "         Step.Set_Status (Status_Undefined);");
+         Put_Line (F, "      end if;");
+      else
+         Put_Line (F, "      Step.Set_Status (Status_Undefined);");
+      end if;
+
       Put_Line (F, "   end Run_Steps;");
       New_Line (F);
       Put_Line (F, "   Runner : Feature_Runner;");
@@ -529,13 +562,27 @@ package body BDD.Codegen is
       Put_Line (F, "end Driver;");
       Close (F);
 
-      Create (F, Out_File, "obj/driver.gpr");
+      Create (F, Out_File,
+              Create_From_Dir (Object_Dir, "driver.gpr").Display_Full_Name);
       Put_Line (F, "with ""gnatcoll"";");
+      Put_Line (F, "with ""gnatbdd"";");
+      Put_Line (F, "with """
+                & Tree.Root_Project.Project_Path.Display_Full_Name
+                & """;");
       Put_Line (F, "project Driver is");
       Put_Line (F, "   for Main use (""driver.adb"");");
-      Put_Line (F, "   for Source_Dirs use (""."",");
-      Put_Line (F, "      ""../src/"",");
-      Put_Line (F, "      """ & Directory.Display_Full_Name & "/**"");");
+      Put (F, "   for Source_Dirs use ("".""");
+
+      if Extra_Steps_Dirs /= null then
+
+         for D in Extra_Steps_Dirs'Range loop
+            Put (F, ", """
+                      & Extra_Steps_Dirs (D).Display_Full_Name & "**""");
+         end loop;
+      end if;
+
+      Put_Line (F, ");");
+
       Put_Line (F, "   package Binder is");
       Put_Line (F, "      for Switches (""Ada"") use (""-E"", ""-g"");");
       Put_Line (F, "   end Binder;");
@@ -546,4 +593,4 @@ package body BDD.Codegen is
       Close (F);
    end Discover_Steps;
 
-end BDD.Codegen;
+end Gnatbdd.Codegen;

@@ -169,6 +169,11 @@ It is recommended that regular expressions always be surrounded with '^' and
 '$', to indicate they should match the whole step definition, and not just part
 of it.
 
+.. _using_tables_in_step_definitions:
+
+Using tables in step definitions
+--------------------------------
+
 Some steps include extra information, like a table or a multi-line string.
 This information is not part of the regular expression, although the
 subprogram should have one or more parameters for it. For instance::
@@ -222,6 +227,38 @@ Many more variants of `Assert` exist, which are able to compare a lot of
 the usual Ada types, as well as more advanced types like lists of strings, or
 the tables that are used in the feature files to provide data to steps.
 
+Automatic type conversion
+=========================
+
+By default, all the parenthesis group in your regular expressions are
+associated with `String` parameters in the subprogram that implements the
+step.
+
+However, GNATbdd also accepts other types for parameters, and will
+automatically convert the string to them. The types are matched with string
+comparison, so they must be defined exactly as how they appear in the following
+table (casing not withstanding), even if you are using use clauses in your
+packages.
+
++-------------------+-----------------------------------------------------+
+| Type              | Description                                         |
++===================+=====================================================+
+| String            | The default parameter type                          |
++-------------------+-----------------------------------------------------+
+| Integer           | Typically associated with (\d+) in the regexp       |
+| Natural           |                                                     |
++-------------------+-----------------------------------------------------+
+| Ada.Calendar.Time | Date (including optional time and timezone)         |
+|                   |  "2014-01-01 13:00:00+01:00"                        |
+|                   |  "Thu, 19 Dec 2014 13:59:12"                        |
+|                   |  "19/12/2014"                                       |
+|                   |  "12/19/2014"                                       |
++-------------------+-----------------------------------------------------+
+| BDD.Tables.Table  | See :ref:`using_tables_in_step_definitions`         |
++-------------------+-----------------------------------------------------+
+| other types       | GNATbdd will generate a type'Image call             |
++-------------------+-----------------------------------------------------+
+
 
 Predefined Regular Expressions
 ==============================
@@ -229,25 +266,28 @@ Predefined Regular Expressions
 To simplify the writting of your steps, GNATbdd provides a number of predefined
 regular expressions that can be used in your own regular expressions. These
 expressions have a name, that can be used in your regexps by using a leading
-colon, as in::
+percent sign, as in::
 
-    --  @then "^I should get :natural results";
+    --  @then "^I should get %natural results";
     procedure My_Step (Expected : Integer);
+
+The predefined regexps are automatically included in a parenthesis group,
+so you should not add parenthesis yourself.
 
 
 Here is the full list of predefined regular expressions:
 
-+---------+----------------------------+-------------------+
-| name    | examples                   | Ada type          |
-+=========+============================+===================+
-| integer | -1; 0; 234                 | Integer           |
-+---------+----------------------------+-------------------+
-| float   | -1.0E+10; 002E-10          | Float             |
-+---------+----------------------------+-------------------+
-| natural | 2; 56                      | Natural           |
-+---------+----------------------------+-------------------+
-| date    | Feb 04, 2014; 2014-02-04   | Ada.Calendar.Time |
-+---------+----------------------------+-------------------+
++---------+----------------------------+-----------------------------+
+| name    | examples                   | Ada type                    |
++=========+============================+=============================+
+| integer | -1; 0; 234                 | String or Integer           |
++---------+----------------------------+-----------------------------+
+| float   | -1.0E+10; 002E-10          | String or Float             |
++---------+----------------------------+-----------------------------+
+| natural | 2; 56                      | String or Natural           |
++---------+----------------------------+-----------------------------+
+| date    | Feb 04, 2014; 2014-02-04   | String or Ada.Calendar.Time |
++---------+----------------------------+-----------------------------+
 
 
 Predefined steps

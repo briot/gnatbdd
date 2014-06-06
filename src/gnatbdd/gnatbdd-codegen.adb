@@ -27,6 +27,7 @@ with Ada.Unchecked_Deallocation;
 with Ada.Text_IO;             use Ada.Text_IO;
 with GNAT.Regpat;             use GNAT.Regpat;
 with GNAT.Strings;            use GNAT.Strings;
+with GNATCOLL.Templates;      use GNATCOLL.Templates;
 with GNATCOLL.Traces;         use GNATCOLL.Traces;
 with GNATCOLL.Utils;          use GNATCOLL.Utils;
 
@@ -46,6 +47,31 @@ package body Gnatbdd.Codegen is
      Compile ("^package ([_\.\w]+)", Case_Insensitive or Multiple_Lines);
    Cst_Comment_Re : constant Pattern_Matcher :=
      Compile ("--\s*@(given|then|when)\s+");
+
+   Predefined_Regexps : constant Substitution_Array :=
+     (1 => (new String'("integer"),
+            new String'("([-+]?\d+)")),
+      2 => (new String'("float"),
+            --  ??? This introduces an extra pair of parenthesis, should add
+            --  support for non-grouping parenthesis in g-regpat
+            new String'("([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)")),
+      3 => (new String'("natural"),
+            new String'("(\+?\d+)")),
+      4 => (new String'("date"),
+            new String'(
+              "((?:"                    --  date part
+              & "\d{4}/\d{2}/\d{2}"    --  2014/01/02
+              & "|"
+              & "\d{2}/\d{2}/\d{4}"    --  01/02/2014
+              & "|"
+              & "\d{4}-\d{2}-\d{2}"    --  2014-01-02
+              & ")"                    --  end of date part
+              & "(?:\s+"               --  optional time part
+              & "\d{2}:\d{2}:\d{2}"    --  hh:mm:ss
+              & "(?:\s*[+-]\d{2})"     --  optional time zone within time
+              & "))"
+              ))
+     );
 
    type Generated_Data is record
       Matchers : Unbounded_String;
@@ -106,6 +132,9 @@ package body Gnatbdd.Codegen is
    type Param_List is array (Natural range <>) of Param_Description;
    type Param_List_Access is access all Param_List;
    procedure Free (Self : in out Param_List_Access);
+
+   function Substitute_Predefined_Regexps (Regexp : String) return String;
+   --  Replace occurrences of predefined regexps
 
    ----------
    -- Free --
@@ -189,13 +218,32 @@ package body Gnatbdd.Codegen is
    --------------------
 
    function String_To_Type (Typ, Value : String) return String is
+      T : constant String := To_Lower (Typ);
    begin
-      if To_Lower (Typ) = "string" then
+      if T = "string" then
          return Value;
+
+      elsif T = "ada.calendar.time" then
+         return "GNATCOLL.Utils.Time_Value (" & Value & ")";
+
       else
          return Typ & "'Value (" & Value & ")";
       end if;
    end String_To_Type;
+
+   -----------------------------------
+   -- Substitute_Predefined_Regexps --
+   -----------------------------------
+
+   function Substitute_Predefined_Regexps (Regexp : String) return String is
+   begin
+      return GNATCOLL.Templates.Substitute
+        (Str        => Regexp,
+         Substrings => Predefined_Regexps,
+         Delimiter  => '%',
+         Recursive  => True,
+         Errors     => Keep_As_Is);
+   end Substitute_Predefined_Regexps;
 
    --------------------------
    -- Parse_Subprogram_Def --
@@ -456,7 +504,8 @@ package body Gnatbdd.Codegen is
             Parse_Subprogram_Def
               (Contents.all,
                Package_Name => Contents (Pack_Start .. Pack_End),
-               Regexp       => Contents (Start .. Last - 1),
+               Regexp       => Substitute_Predefined_Regexps
+                 (Contents (Start .. Last - 1)),
                Found        => Found,
                Data         => Data,
                Pos          => Pos);
@@ -526,11 +575,12 @@ package body Gnatbdd.Codegen is
               Create_From_Dir
                 (Object_Dir, +Driver & ".adb").Display_Full_Name);
       Put_Line (F, "--  Automatically generated");
-      Put_Line (F, "with BDD;          use BDD;");
-      Put_Line (F, "with BDD.Main;     use BDD.Main;");
-      Put_Line (F, "with BDD.Features; use BDD.Features;");
-      Put_Line (F, "with BDD.Runner;   use BDD.Runner;");
-      Put_Line (F, "with GNAT.Regpat;  use GNAT.Regpat;");
+      Put_Line (F, "with BDD;            use BDD;");
+      Put_Line (F, "with BDD.Main;       use BDD.Main;");
+      Put_Line (F, "with BDD.Features;   use BDD.Features;");
+      Put_Line (F, "with BDD.Runner;     use BDD.Runner;");
+      Put_Line (F, "with GNAT.Regpat;    use GNAT.Regpat;");
+      Put_Line (F, "with GNATCOLL.Utils; use GNATCOLL.Utils;");
       Put_Line (F, To_String (Data.Withs));
       Put_Line (F, "procedure " & Driver & " is");
       New_Line (F);

@@ -119,7 +119,7 @@ package body BDD is
 
       Define_Switch
         (Config,
-         Switch => "-o=",
+         Switch => "-o:",
          Argument    => "file",
          Help   => "Where the output should be sent (stdout by default)."
            & " If the extension is .html, the output is HTML.");

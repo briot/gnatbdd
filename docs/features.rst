@@ -12,40 +12,6 @@ meant for human readers, and is not used by the automatic tool.
 The features are then further divided into one or more scenarios, which are
 sometimes also called "tests". These will be discussed in the next section.
 
-Finding features
-================
-
-Let's first examine how GNATbdd finds all the features for your application.
-
-.. index:: switches; --ext
-
-Typically, the features are written in text files with a :file:`.feature`
-extension. Several editors will automatically provide syntax highlighting with
-such an extension. However, you can choose your own extension by using the
-:option:`--ext .EXT` switch when you run GNATbdd.
-
-.. index:: switches; --features
-
-By default, GNATbdd will find all the files with a matching extension in
-a subdirectory names :file:`features`, within the directory where GNATbdd
-is run. You can however specify one or more other directories to check,
-by using the :option:`--features DIR` switch one or more times.
-
-GNATbdd will always search recursively in those directories. This lets you
-organize the files into subdirectories when you have several of them, and
-thus perhaps make it easier to refer to them.
-
-GNATbdd will run the features file in alphabetical order of the full path of
-the feature file, by default. This provides a more consistent output when
-GNATbdd is run multiple times.
-
-.. index:: switches; --random
-
-However, by using the :option:`--random` switch, the order of features is
-randomized. This is a convenient way to check that the various tests are indeed
-independent of each other, as they should be to make it possible to run tests
-individually.
-
 Syntax of the features file
 ===========================
 
@@ -123,20 +89,11 @@ to run subsets of the whole set of scenarios. Here is an example::
 
 The tags of the feature automatically apply to its Scenarios
 
-.. index:: switches; --tags
-
-When you run GNATbdd, you can use the switch :option:`--tags` to control which
-scenarios should be run. For instance, all scenarios related to '@gui', or all
-scenarios not related to '@startup'. You can of course select subsets of
-scenarios based on the file names, but tags provide a file-system-agnostic
-selection mechanism.
-
-
 Other usage of tags could be to identify *slow tests* (with @slow) so that
 their timeout is increased.
 
 A tag can also be used to link a scenario to a *high-level requirement* in your
-application
+application, for instance @HLR-12-2.
 
 Tags can also be used to identify *expected failures* (for instance @xfail), or
 *work in progress* (for instance @wip).

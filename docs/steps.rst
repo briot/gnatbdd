@@ -2,6 +2,63 @@
 Steps definitions
 *****************
 
+GNATbdd
+=======
+
+GNATbdd is the first tool that you will need to run as part of your testing
+framework.
+
+Its role is to aggregate, into one or more executables various pieces of
+code:
+
+Part of your application's code
+  This is the code you intend to test, and all its closure and dependencies.
+
+Step definitions
+  These are (hopefully short) subprograms that create the link between the
+  English sentences you wrote in your features files, and the actual code to
+  execute.
+
+GNATbdd's own library
+  GNATbdd comes with an extensive library which includes looking for features
+  files to run, parsing them, actually running them (or a subset of them
+  depending on command line switches), and an assert library to help you
+  write your own tests.
+
+Stubs
+  It is often useful, when running test, to stub a part of your application.
+  This might be done to simplify the test setup (no need for a remove server
+  for instance for a distributed application), to speed up the test by
+  abstracting a slower part of the application, or to help focus the tests.
+  Since you might want to stub different parts of the application depending
+  on the features you are testing, GNATbdd might need to generate multiple
+  executables that will be run for the tests.
+
+All of these will be examined in more details in this section.
+
+The general workflow is thus the following::
+
+      GNATbdd library      Ada step definitions
+              \                  /
+               \                /
+                \              /
+                   GNATbdd    ------------   Application code
+                      |
+                      | generate glue code
+                      | <compile and link>
+                      |
+                      \           feature files
+                       \             /
+                        \           /
+                         \         /
+                        test driver
+
+
+Given its dependencies, GNATbdd (and the compiling of the driver) only need
+to be performed when your application's code changes, or the step definitions
+change. This step is not needed when you only change the features files
+themselves, or even if you add new features files.
+
 
 Compiling steps
 ===============
@@ -12,50 +69,63 @@ and what the expected result should be.
 This is performed via the various steps defined in the scenario.  We now need
 to associate those steps (English sentences) into actual code.
 
-This is done in one or more Ada files which are compiled and linked into the
-GNATbdd framework to generate an executable.  This executable is then run and
-dynamically parses all the :file:`*.feature` file as we described in the
-previous step::
+.. index:: gnatbdd switches; -P
 
-      Ada BDD library      Ada step definitions
-              \                  /
-               \                /
-                \              /
-                   GNATbdd
-                      | generate glue code
-                      | <compile and link>
-                      |
-                      \                feature files
-                       \                   /
-                        \                 /
-                         \               /
-                        test driver (exec)
+GNATbdd has one mandatory parameter, :option:`-P project.gpr`, which points to
+the project file you are using to build your application.
 
+GNATbdd will parse that project to find all its source files, and look for
+step definitions in all of the spec files.
 
-.. index:: switches; --steps
+.. index:: gnatbdd switches; --steps
 
-The step definitions are found automatically by parsing the Ada package specs
-found in the directory :file:`features/step_definitions` (by default, although
-you can use the :option:`--steps=DIR` switch to point to another directory. All
-the Ada files found in those directories (recursively) will be parsed for
-subprograms that have the Step_Regexp aspect or pragma (see below).
-
-It is possible to mix the step definitions with your standard application code,
-but this is not a recommended approach and it is better to separate the two.
+Additionally, you can add one or more directories that are not part of your
+project, but that should also be parsed (recursively). For instance, by
+specifying :option:`--steps=features/step_definitions` one or more type,
+that directory and all its subdirectories will be searched for Ada spec
+files that might contain step definitions.
 
 When you launch GNATbdd, it will search for all the Ada files in those
-directories, generate one Ada file, and will then link your Ada files, the
-generated file, and the relevant parts of the GNATbdd library. This will
-generate a single executable that is automatically spawned and then in
-charge of processing all your :file:`.feature` files.
+directories and generate one Ada file, named by default :file:`driver.adb`.
+That file is generated in the object directory of the project you passed
+in argument. That directory should therefore be writable (although it will
+be created automatically if it does not exist yet).
 
-.. note::
-  This compilation is done by generating an extending project file, so users
-  will also have to provide a project file that points to all their sources.
+.. index:: gnatbdd switches; --driver
 
-As a result, the above compilation step will only take time whenever you
-add or change step definitions, but not when you only add :file:`.feature`
-files that reuse existing features.
+If you wish to use another name for the driver (and therefore for the
+generated executable), you can use the :option:`--driver=NAME` switch
+on the command line.
+
+Building the driver
+===================
+
+Once the driver has been generated by GNATbdd, you now need to compile
+it. GNATbdd has in fact also generated a project file, named by default
+:file:`driver.gpr` (that name is also set through the :option:`--driver`
+switch).
+
+So all you have to do is hopefully::
+
+   > gprbuild -P obj/driver.gpr
+
+where :file:`obj/` is the object directory of the application's project.
+
+The generated project depends on three other projects:
+
+your application's project
+   This is referenced through an absolute path, so should always be found.
+
+:file:`gnatbdd.gpr`
+   This is a project installed along with GNATbdd. It should be in one of
+   the directories looked for by the compiler (which is automatic if you
+   installed GNATbdd in the same directory as the compiler), or in one of
+   the directories part of the `GPR_PROJECT_PATH` environment variable.
+
+:file:`gnatcoll.gpr`
+   This is the project file for the GNAT Components Collection, which should
+   be available the same way that :file:`gnatbdd.gpr` is.
+
 
 Add files for step definitions
 ==============================
@@ -99,20 +169,33 @@ It is recommended that regular expressions always be surrounded with '^' and
 '$', to indicate they should match the whole step definition, and not just part
 of it.
 
-.. index:: switches; --duplicates
+Some steps include extra information, like a table or a multi-line string.
+This information is not part of the regular expression, although the
+subprogram should have one or more parameters for it. For instance::
 
-The switch :option:`--duplicates` can be used to systematically check all
-regular expressions for each step, and warn when there are multiple matching
-regexps.
+    with BDD.Tables;   use BDD.Tables;
+    package My_Steps is
 
-.. note::
-   alternatively, we could output the name/location of the subprogram that
-   handled the step, to ensure the right one is executed.
+        --  @then ^I should see the following results:$
+        procedure Check_Results (Expected : BDD.Tables.Table);
+
+    end My_Steps;
+
+Here, GNATbdd will notice that the subprogram has one more parameter than
+there are parenthesis groups in the regular expression. It then checks for
+this extra parameter whether the type is `BDD.Tables.Table`. If this is the
+case, that parameter will be passed the table that the user wrote as part
+of the step.
+
+The comparison of the type is purely textual, there is no semantic analysis.
+So it might be specified exactly as `BDD.Tables.Table`, even if you are using
+use clauses.
+
 
 Assert library
 ==============
 
-The intent is that the steps should raise an exception `Assert_Failure`
+The intent is that the steps should raise an exception
 when the step fails. GNATbdd provides the package :file:`BDD.Asserts` to help
 perform the tests and raise the exception when they fail. This package will
 also make sure a proper error message is logged, showing the expecting and
@@ -139,10 +222,6 @@ Many more variants of `Assert` exist, which are able to compare a lot of
 the usual Ada types, as well as more advanced types like lists of strings, or
 the tables that are used in the feature files to provide data to steps.
 
-.. note::
-   when comparing steps, the output should highlight the parts of the string
-   that are different, to help spot the difference, We also need to do
-   something special for trailing spaces.
 
 Predefined Regular Expressions
 ==============================
@@ -152,8 +231,8 @@ regular expressions that can be used in your own regular expressions. These
 expressions have a name, that can be used in your regexps by using a leading
 colon, as in::
 
-    procedure My_Step (Expected : Integer)
-       with Step_Regexp => "^I should get :natural results";
+    --  @then "^I should get :natural results";
+    procedure My_Step (Expected : Integer);
 
 
 Here is the full list of predefined regular expressions:
@@ -205,22 +284,6 @@ display possible definitions for the corresponding subprograms, which you can
 copy and paste into your Ada file directly. This helps getting started.
 
 
-Step timeout
-============
-
-.. note::
-   This will likely require each scenario to be run in its own task. There
-   will be only one such task, so it doesn't really add constraints on the
-   user code or step definitions, but it makes debugging slightly more
-   difficult.
-
-.. index:: switches; --timeout
-
-You can use the :option:`--timeout` switch to specify a maximum time that
-steps can take to execute. A test that times out will automatically fail
-with an appropriate error message.
-
-
 Writing steps in python
 =======================
 
@@ -253,21 +316,6 @@ of the test. In particular, this is often necessary when testing graphical
 user interfaces and other event-based applications.
 
 
-Running tests in parallel
-=========================
-
-There are multiple modes to run features in parallel. The parallelism is always
-between :file:`.feature` file, never between the Scenario of a given file.
-
-When your application is task safe, you can run multiple features in parallel
-by running each in its own task (up to a maximum number of tasks of course).
-
-In other cases, GNATbdd can automatically spawn several instances of the test
-driver, each running a single feature in parallel of the others. This is
-slightly less efficient, but does not impose task-safety constraints on
-your application.
-
-
 White box vs Black box testing
 ==============================
 
@@ -286,10 +334,10 @@ The main advantage is that the application is tested exactly as the user would
 use it. This mode is compatible with most applications, like command-line
 application, graphical user interfaces, web servers or embedded applications.
 
-When testing embedded applications, GNATbdd will run on the host, and the
-application will be spawned on the target. Communication between the two is the
-responsibility of the step definition, and could take the form of examining the
-standard output or communicating via sockets for instance.
+When testing embedded applications, the test driver will run on the host, and
+the application will be spawned on the target. Communication between the two is
+the responsibility of the step definition, and could take the form of examining
+the standard output or communicating via sockets for instance.
 
 No real restriction apply to the way the step definition is written, since it
 is running on the host, not in the more limited environment of the target.
@@ -307,7 +355,7 @@ dragging in a lot of the application's code, which makes the link time for
 the driver longer.
 
 More importantly, this mode might not be compatible with embedded development,
-since GNATbdd runs on the host.
+since the driver runs on the host.
 
 .. note::
    Can we run the steps directly on the target in this case, while limiting

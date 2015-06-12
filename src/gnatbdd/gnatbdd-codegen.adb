@@ -22,6 +22,8 @@
 ------------------------------------------------------------------------------
 
 with Ada.Characters.Handling; use Ada.Characters.Handling;
+with Ada.Command_Line;        use Ada.Command_Line;
+with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Strings.Unbounded;   use Ada.Strings.Unbounded;
 with Ada.Unchecked_Deallocation;
 with Ada.Text_IO;             use Ada.Text_IO;
@@ -52,8 +54,6 @@ package body Gnatbdd.Codegen is
      (1 => (new String'("integer"),
             new String'("([-+]?\d+)")),
       2 => (new String'("float"),
-            --  ??? This introduces an extra pair of parenthesis, should add
-            --  support for non-grouping parenthesis in g-regpat
             new String'("([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)")),
       3 => (new String'("natural"),
             new String'("(\+?\d+)")),
@@ -279,11 +279,13 @@ package body Gnatbdd.Codegen is
             Expected_Params := Paren_Count (Re);
          end;
       exception
-         when Expression_Error =>
+         when E : Expression_Error =>
             Put_Line
               (Standard_Error,
                "Error: invalid regular expression for step '"
                & Regexp & "'");
+            Put_Line (Standard_Error, Exception_Message (E));
+            Ada.Command_Line.Set_Exit_Status (Failure);
             return;
       end;
 
@@ -296,6 +298,7 @@ package body Gnatbdd.Codegen is
            (Standard_Error,
             "Error: The step definition for '" & Regexp & "' must be"
             & " followed immediately by its subprogram");
+         Ada.Command_Line.Set_Exit_Status (Failure);
          return;
       end if;
 
@@ -304,6 +307,7 @@ package body Gnatbdd.Codegen is
          Put_Line
            (Standard_Error,
             "Could not find name of subprogram for '" & Regexp & "'");
+         Ada.Command_Line.Set_Exit_Status (Failure);
          return;
       end if;
 
@@ -320,8 +324,11 @@ package body Gnatbdd.Codegen is
             Params : String_List_Access := Split
               (Contents (Matches (3).First .. Matches (3).Last),
                On => ';');
+            P_Count : Natural;
          begin
-            List := new Param_List (Params'Range);
+            --  Add 1, in case there is a table or JSON parameter
+            List := new Param_List (1 .. Expected_Params + 1);
+            P_Count := List'First - 1;
             for P in Params'Range loop
                Colon := Find_Char (Params (P).all, ':');
                if Colon > Params (P)'Last then
@@ -329,43 +336,51 @@ package body Gnatbdd.Codegen is
                     (Standard_Error,
                      "Error while parsing subprogram declaration for step '"
                      & Regexp & "'");
+                  Ada.Command_Line.Set_Exit_Status (Failure);
                   return;
                end if;
 
                declare
                   D : String renames Params (P).all;
-                  Name : constant String := Trim (D (D'First .. Colon - 1));
                   Typ  : constant String := Trim (D (Colon + 1 .. D'Last));
+                  Names : String_List_Access := Split
+                     (D (D'First .. Colon - 1), On => ',');
                begin
-                  if P > Expected_Params then
-                     --  Is this a Table parameter ?
-                     if Typ = "BDD.Tables.Table" then
-                        if Table_Param /= null then
+                  for N in Names'Range loop
+                     P_Count := P_Count + 1;
+                     if P_Count > Expected_Params then
+                        --  Is this a Table parameter ?
+                        if Typ = "BDD.Tables.Table" then
+                           if Table_Param /= null then
+                              Put_Line
+                                (Standard_Error,
+                                 "Multiple table parameters is unsupported for"
+                                 & " step '" & Regexp & "'");
+                              Free (List);
+                              Free (Subprogram);
+                              Ada.Command_Line.Set_Exit_Status (Failure);
+                              return;
+                           end if;
+                           Table_Param := new String'(Names (N).all);
+                        else
                            Put_Line
                              (Standard_Error,
-                              "Multiple table parameters is unsupported for"
-                              & " step '" & Regexp & "'");
+                              "Too many parameters (or not enough parenthesis"
+                              & " groups) for step"
+                              & ASCII.LF & "   " & Regexp);
                            Free (List);
                            Free (Subprogram);
+                           Ada.Command_Line.Set_Exit_Status (Failure);
                            return;
                         end if;
-                        Table_Param := new String'(Name);
                      else
-                        Put_Line
-                          (Standard_Error,
-                           "Mismatch between the number of parenthesis in the"
-                           & " regexp and the subprogram parameters for step '"
-                           & Regexp & "'");
-                        Free (List);
-                        Free (Subprogram);
-                        return;
+                        List (P_Count) :=
+                          (Name    => new String'(Trim (Names (N).all)),
+                           Of_Type => new String'(Typ));
+                        List_Last := P_Count;
                      end if;
-                  else
-                     List (P) :=
-                       (Name    => new String'(Name),
-                        Of_Type => new String'(Typ));
-                     List_Last := P;
-                  end if;
+                  end loop;
+                  Free (Names);
                end;
             end loop;
 
@@ -376,11 +391,11 @@ package body Gnatbdd.Codegen is
       if List_Last /= Expected_Params then
          Put_Line
            (Standard_Error,
-            "Mismatch between the number of parenthesis in the"
-            & " regexp and the subprogram parameters for step '"
-            & Regexp & "'");
+            "Not enough parameters (or too many parenthesis groups) for step"
+            & ASCII.LF & "   " & Regexp);
          Free (List);
          Free (Subprogram);
+         Ada.Command_Line.Set_Exit_Status (Failure);
          return;
       end if;
 

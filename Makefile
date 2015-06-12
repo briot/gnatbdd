@@ -12,11 +12,12 @@ projectdir=${DESTDIR}${prefix}/${projectsubdir}
 
 MKDIR=mkdir -p
 CP=cp -p
+GPRBUILD=gprbuild
 
 all: build
 
 build: force
-	gprbuild -Pgnatbdd_main.gpr -j0 -p
+	${GPRBUILD} -Pgnatbdd_main.gpr -j0 -p
 
 clean: force
 	gprclean -Pgnatbdd_main -r
@@ -34,6 +35,6 @@ test: build install build_driver
 # Driver only needs to be recompiled when the step definitions change
 build_driver: 
 	${bindir}/gnatbdd -Pexample/calc.gpr
-	GPR_PROJECT_PATH=${projectdir} gprbuild -P example/obj/driver.gpr
+	GPR_PROJECT_PATH=${projectdir} ${GPRBUILD} -P example/obj/driver.gpr
 
 force:

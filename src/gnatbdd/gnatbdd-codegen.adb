@@ -436,11 +436,9 @@ package body Gnatbdd.Codegen is
                     & " => "
                     & String_To_Type
                       (List (L).Of_Type.all,
-                       "Text (Matches ("
+                       "Sub (Text, Matches, "
                        & Image (1 + L - List'First, Min_Width => 0)
-                       & ").First .. Matches ("
-                       & Image (1 + L - List'First, Min_Width => 0)
-                       & ").Last)"));
+                       & ")"));
          end loop;
 
          if Table_Param /= null then
@@ -600,6 +598,22 @@ package body Gnatbdd.Codegen is
       Put_Line (F, "procedure " & Driver & " is");
       New_Line (F);
       Put_Line (F, To_String (Data.Regexps));
+      New_Line (F);
+      Put_Line (F, "   function Sub");
+      Put_Line (F, "     (T : String; M : Match_Array; Idx : Natural)");
+      Put_Line (F, "     return String;");
+      Put_Line (F, "     pragma Inline (Sub);");
+      Put_Line (F, "   function Sub");
+      Put_Line (F, "     (T : String; M : Match_Array; Idx : Natural)");
+      Put_Line (F, "     return String is");
+      Put_Line (F, "   begin");
+      Put_Line (F, "      if M (Idx) = No_Match then");
+      Put_Line (F, "         return """";");
+      Put_Line (F, "      else");
+      Put_Line (F, "         return T (M (Idx).First .. M (Idx).Last);");
+      Put_Line (F, "      end if;");
+      Put_Line (F, "   end Sub;");
+      New_Line (F);
       Put_Line (F, "   procedure Run_Steps");
       Put_Line
         (F,

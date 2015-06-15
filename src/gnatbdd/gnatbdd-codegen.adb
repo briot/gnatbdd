@@ -47,8 +47,14 @@ package body Gnatbdd.Codegen is
       Case_Insensitive or Single_Line);
    Cst_Package_Re : constant Pattern_Matcher :=
      Compile ("^package ([_\.\w]+)", Case_Insensitive or Multiple_Lines);
+
    Cst_Comment_Re : constant Pattern_Matcher :=
      Compile ("--\s*@(given|then|when)\s+");
+   --  Matches the special comments before step definitions
+
+   Cst_Setup_Re      : constant Pattern_Matcher :=
+     Compile ("--\s*@setup_(driver|feature)\s*$", Multiple_Lines);
+   --  Matches the special comments before initialization procedures
 
    Predefined_Regexps : constant Substitution_Array :=
      (1 => (new String'("integer"),
@@ -59,7 +65,7 @@ package body Gnatbdd.Codegen is
             new String'("(\+?\d+)")),
       4 => (new String'("date"),
             new String'(
-              "((?:"                    --  date part
+              "((?:"                   --  date part
               & "\d{4}/\d{2}/\d{2}"    --  2014/01/02
               & "|"
               & "\d{2}/\d{2}/\d{4}"    --  01/02/2014
@@ -70,13 +76,17 @@ package body Gnatbdd.Codegen is
               & "\d{2}:\d{2}:\d{2}"    --  hh:mm:ss
               & "(?:\s*[+-]\d{2})"     --  optional time zone within time
               & "))"
-              ))
+             )),
+      5 => (new String'("%"), new String'("%"))
      );
 
    type Generated_Data is record
       Matchers : Unbounded_String;
       --  Code extract that, for a given step, checks all known step definition
       --  and execute the corresponding subprogram if needed.
+
+      Setup_Driver, Setup_Feature : Unbounded_String;
+      --  Code extract that calls all the initializers defined by the user.
 
       Regexps  : Unbounded_String;
       --  Code extract that declares all the regexps used by the step
@@ -123,6 +133,18 @@ package body Gnatbdd.Codegen is
    --  be parsed).
    --  Found is set to True if at least one step definition was found, and left
    --  unchanged otherwise
+
+   procedure Parse_Setup_Subprogram_Def
+     (Contents     : String;
+      Package_Name : String;
+      Setup_Type   : String;
+      Found        : in out Boolean;
+      Pos          : in out Integer;
+      Data         : in out Generated_Data);
+   --  Parse the definition of an initialization subprogram.
+   --  Pos is left after the declaration (if the latter could
+   --  be parsed).
+   --  Found is set to True if an initialization subprogram was found.
 
    type Param_Description is record
       Name    : GNAT.Strings.String_Access;
@@ -470,6 +492,68 @@ package body Gnatbdd.Codegen is
       Free (List);
    end Parse_Subprogram_Def;
 
+   --------------------------------
+   -- Parse_Setup_Subprogram_Def --
+   --------------------------------
+
+   procedure Parse_Setup_Subprogram_Def
+     (Contents     : String;
+      Package_Name : String;
+      Setup_Type   : String;
+      Found        : in out Boolean;
+      Pos          : in out Integer;
+      Data         : in out Generated_Data)
+   is
+      Name : constant String := "@setup_" & Setup_Type;
+      Matches         : Match_Array (0 .. 3);
+      Subprogram      : GNAT.Strings.String_Access;
+   begin
+      Skip_Blanks (Contents, Pos);
+      if Pos > Contents'Last
+        or else not Starts_With
+          (Contents (Pos .. Contents'Last), Cst_Procedure)
+      then
+         Put_Line
+           (Standard_Error,
+            "Error: The step definition for '" & Name & "' must be"
+            & " followed immediately by its subprogram");
+         Ada.Command_Line.Set_Exit_Status (Failure);
+         return;
+      end if;
+
+      Match (Cst_Procedure_Re, Contents, Matches, Data_First => Pos);
+      if Matches (1) = No_Match then
+         Put_Line
+           (Standard_Error,
+            "Could not find name of subprogram for '" & Name & "'");
+         Ada.Command_Line.Set_Exit_Status (Failure);
+         return;
+      end if;
+
+      Pos := Matches (0).Last;
+
+      Subprogram := new String'
+        (Package_Name & '.'
+         & Contents (Matches (1).First .. Matches (1).Last));
+
+      if Matches (3) /= No_Match then
+         Put_Line
+           (Standard_Error,
+            "Subprogram for " & Name & " should take no parameter");
+         Ada.Command_Line.Set_Exit_Status (Failure);
+         return;
+      end if;
+
+      if Setup_Type = "driver" then
+         Append (Data.Setup_Driver, "      " & Subprogram.all & ";");
+      elsif Setup_Type = "feature" then
+         Append (Data.Setup_Feature, "      " & Subprogram.all & ";");
+      end if;
+
+      Found := True;
+      Free (Subprogram);
+   end Parse_Setup_Subprogram_Def;
+
    -----------------
    -- Check_Steps --
    -----------------
@@ -522,6 +606,27 @@ package body Gnatbdd.Codegen is
                Found        => Found,
                Data         => Data,
                Pos          => Pos);
+         end loop;
+
+         --  Parse the initialization functions
+         Pos := Contents'First;
+         while Pos <= Contents'Last loop
+            Match (Cst_Setup_Re, Contents.all, Matches, Data_First => Pos);
+            exit when Matches (0) = No_Match;
+
+            Pos := Matches (0).Last;
+            Skip_Blanks (Contents.all, Pos);
+            Last := EOL (Contents (Pos .. Contents'Last));
+
+            Start := Pos;
+            Pos := Last + 1;  --  After ASCII.LF
+            Parse_Setup_Subprogram_Def
+              (Contents.all,
+               Package_Name => Contents (Pack_Start .. Pack_End),
+               Setup_Type  => Contents (Matches (1).First .. Matches (1).Last),
+               Found       => Found,
+               Data        => Data,
+               Pos         => Pos);
          end loop;
 
          if Found then
@@ -637,7 +742,46 @@ package body Gnatbdd.Codegen is
 
       Put_Line (F, "   end Run_Steps;");
       New_Line (F);
-      Put_Line (F, "   Runner : Feature_Runner;");
+
+      --  Feature_Runner
+
+      Put_Line (F, "   type Auto_Feature_Runner is new Feature_Runner");
+      Put_Line (F, "      with null record;");
+
+      if Data.Setup_Driver /= "" then
+         Put_Line (F, "   overriding procedure Run_Start");
+         Put_Line (F, "      (Self : in out Auto_Feature_Runner);");
+      end if;
+      if Data.Setup_Feature /= "" then
+         Put_Line (F, "   overriding procedure Feature_Start");
+         Put_Line (F, "      (Self    : in out Auto_Feature_Runner;");
+         Put_Line (F, "       Feature : BDD.Features.Feature);");
+      end if;
+
+      New_Line (F);
+
+      if Data.Setup_Driver /= "" then
+         Put_Line (F, "   overriding procedure Run_Start");
+         Put_Line (F, "      (Self : in out Auto_Feature_Runner) is");
+         Put_Line (F, "   begin");
+         Put_Line (F, To_String (Data.Setup_Driver));
+         Put_Line (F, "      Run_Start (Feature_Runner (Self)); -- inherited");
+         Put_Line (F, "   end Run_Start;");
+         New_Line (F);
+      end if;
+
+      if Data.Setup_Feature /= "" then
+         Put_Line (F, "   overriding procedure Feature_Start");
+         Put_Line (F, "      (Self    : in out Auto_Feature_Runner;");
+         Put_Line (F, "       Feature : BDD.Features.Feature) is");
+         Put_Line (F, "   begin");
+         Put_Line (F, To_String (Data.Setup_Feature));
+         Put_Line (F, "      Feature_Start (Feature_Runner (Self), Feature);");
+         Put_Line (F, "   end Feature_Start;");
+         New_Line (F);
+      end if;
+
+      Put_Line (F, "   Runner : Auto_Feature_Runner;");
       Put_Line (F, "begin");
       Put_Line
         (F, "   Runner.Add_Step_Runner (Run_Steps'Unrestricted_Access);");

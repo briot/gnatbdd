@@ -158,6 +158,13 @@ The comments should start with one of '@given', '@then' or '@when'.
 There is no semantic difference, they only act as a way to help
 introduce the regexp.
 
+It is recommended that regular expressions always be surrounded with '^' and
+'$', to indicate they should match the whole step definition, and not just part
+of it.
+
+Parameter types
+===============
+
 The regular expressions are matched with the step as found in the
 :file:`*.feature` file. The parenthesis groups found in the regexp will be
 passed as parameters to the procedure. By default, all parameters are passed as
@@ -165,9 +172,22 @@ strings. If you use another scalar type for the parameter, GNATbdd will use a
 `Type'Value (...)` before passing the parameter, and raise an error if
 the type is incorrect.
 
-It is recommended that regular expressions always be surrounded with '^' and
-'$', to indicate they should match the whole step definition, and not just part
-of it.
+GNATbdd provides specific handling for a few parameter types. Note that the
+type must be written exactly as in the table below (case-insensitive), since
+GNATbdd does not contain a semantic analyzer to resolve names.
+
++-------------------+-----------------------------------------------------+
+| Type              | Conversion from regexp match                        |
++===================+=====================================================+
+| String            | The parenthesis group as matched by the regexp      |
++-------------------+-----------------------------------------------------+
+| Ada.Calendar.Time | Converts a date with GNATCOLL.Utils.Time_Value.     |
+|                   | This supports a number of date and time formats, for|
+|                   | instance '2015-06-15T12:00:00Z' or '2015-06-15' or  |
+|                   | '15 jun 2015' or 'jun 15, 2015'.                    |
++-------------------+-----------------------------------------------------+
+| others            | Use others'Value to convert from string             |
++-------------------+-----------------------------------------------------+
 
 .. _using_tables_in_step_definitions:
 
@@ -274,7 +294,6 @@ percent sign, as in::
 The predefined regexps are automatically included in a parenthesis group,
 so you should not add parenthesis yourself.
 
-
 Here is the full list of predefined regular expressions:
 
 +---------+----------------------------+-----------------------------+
@@ -289,6 +308,11 @@ Here is the full list of predefined regular expressions:
 | date    | Feb 04, 2014; 2014-02-04   | String or Ada.Calendar.Time |
 +---------+----------------------------+-----------------------------+
 
+You can use the percent symbol twice ("%%") when you need to ignore a
+string matching one of the predefined regular expressions. For instance,
+"%%integer" would match the string "%integer" in the feature file. When
+you only when to insert a percent sign before any other string, you do not
+need to duplicate it though (so "%test" can be written exactly as is).
 
 Predefined steps
 ================
@@ -343,6 +367,36 @@ As usual, any python file found in the :file:`features/step_definitions`
 directory or the one set through :option:`--steps` will be analyzed,
 and those that use the `@step_regexp` decorator.
    
+Set up
+------
+
+Often, the code for the step definitions will need some initialization
+(connecting to a database, opening a web browser,...). It is possible
+to declare any number of such initialization subprograms.
+
+Some of them will be run once per execution of the driver, others will
+be executed one per feature file.
+
+These subprograms are also declared in the step definitions files, as
+in::
+
+   package My_Steps is
+
+        @setup_driver
+        procedure Init_Driver;
+
+        @setup_feature
+        procedure Init_Feature;
+
+   end My_Steps;
+
+The subprograms never take any parameter. Since they might be called
+multiple times, they also need to clean up any initialization they might
+have done before.
+
+Most of the time, it is better for these procedures to be written directly
+as specific steps in the tests, so `@setup_feature` should in general be
+replaced with a `Background` section in the feature file.
 
 Asynchronous tests
 ==================

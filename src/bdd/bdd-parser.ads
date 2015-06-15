@@ -60,7 +60,7 @@ package BDD.Parser is
       Feature  : BDD.Features.Feature) is null;
    --  Called when the last line of a feature has been seen.
 
-   type Feature_Parser is tagged private;
+   type Feature_Parser is tagged null record;
 
    procedure Parse
      (Self     : in out Feature_Parser;
@@ -71,8 +71,5 @@ package BDD.Parser is
    --  Calls Runner.Run_Scenario for each scenario found.
    --
    --  Raises Syntax_Error when the file does not contain valid syntax.
-
-private
-   type Feature_Parser is tagged null record;
 
 end BDD.Parser;

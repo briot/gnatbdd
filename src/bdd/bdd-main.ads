@@ -27,8 +27,8 @@ with BDD.Runner;
 
 package BDD.Main is
 
-   procedure Main (Self : in out BDD.Runner.Feature_Runner);
+   procedure Main (Self : in out BDD.Runner.Feature_Runner'Class);
    --  The main loop, which discovers and then runs all the tests
-   --  Self should have been initialized with Add_Step_Runner first
+   --  Self should have been initialized with Add_Step_Runner first.
 
 end BDD.Main;

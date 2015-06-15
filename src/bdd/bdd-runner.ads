@@ -52,9 +52,9 @@ package BDD.Runner is
    --  Register one or more features file explicitly.
 
    procedure Run
-     (Self   : in out Feature_Runner;
-      Format : not null access BDD.Formatters.Formatter'Class;
-      Parser : in out BDD.Parser.Feature_Parser'Class);
+     (Self           : in out Feature_Runner;
+      Format         : not null access BDD.Formatters.Formatter'Class;
+      Parser         : in out BDD.Parser.Feature_Parser'Class);
    --  Run all features and their scenarios.
    --
    --  Each of the features file is parsed through Parser. This allows you to

@@ -78,14 +78,14 @@ package body BDD.Runner is
    is
    begin
       if Self.Files /= null then
-         Self.Run_Start;
+         Feature_Runner'Class (Self).Run_Start;
          Self.Format := Format;
          Sort (Self.Files.all);
          for F in Self.Files'Range loop
             Parser.Parse (Self.Files (F), Self);
          end loop;
 
-         Self.Run_End;
+         Feature_Runner'Class (Self).Run_End;
          Self.Format := null;
 
          Set_Exit_Status

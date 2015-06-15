@@ -34,7 +34,8 @@ package body BDD.Main is
    -- Main --
    ----------
 
-   procedure Main (Self : in out BDD.Runner.Feature_Runner) is
+   procedure Main (Self : in out BDD.Runner.Feature_Runner'Class)
+   is
       Parser   : BDD.Parser.Feature_Parser;
       Format   : access BDD.Formatters.Formatter'Class;
       Media    : Media_Writer_Access;

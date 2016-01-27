@@ -135,7 +135,7 @@ package BDD.Asserts_Generic is
       Not_Operator_Image : String;
    package Asserts is
 
-      procedure Assert
+      procedure Assert_Equal
         (Val1, Val2 : T;
          Msg        : String := "";
          Location   : String := GNAT.Source_Info.Source_Location;
@@ -156,7 +156,7 @@ package BDD.Asserts_Generic is
       with function "<" (V1, V2 : T) return Boolean is <>;
       with function "<=" (V1, V2 : T) return Boolean is <>;
    package Asserts_Simple is
-      procedure Assert
+      procedure Assert_Equal
         (Val1, Val2 : T;
          Msg        : String := "";
          Location   : String := GNAT.Source_Info.Source_Location;

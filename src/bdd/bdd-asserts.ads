@@ -49,12 +49,12 @@ package BDD.Asserts is
 
    package Integers is new BAG.Asserts_Simple (Integer, Integer'Image);
 
-   procedure Assert
+   procedure Assert_Equal
      (Val1, Val2 : Integer;
       Msg : String := "";
       Location   : String := GNAT.Source_Info.Source_Location;
       Entity     : String := GNAT.Source_Info.Enclosing_Entity)
-      renames Integers.Assert;
+      renames Integers.Assert_Equal;
    procedure Assert_Not_Equal
      (Val1, Val2 : Integer;
       Msg : String := "";
@@ -92,12 +92,12 @@ package BDD.Asserts is
 
    package Floats   is new BAG.Asserts_Simple (Float, Float'Image);
 
-   procedure Assert
+   procedure Assert_Equal
      (Val1, Val2 : Float;
       Msg : String := "";
       Location   : String := GNAT.Source_Info.Source_Location;
       Entity     : String := GNAT.Source_Info.Enclosing_Entity)
-      renames Floats.Assert;
+      renames Floats.Assert_Equal;
    procedure Assert_Not_Equal
      (Val1, Val2 : Float;
       Msg : String := "";
@@ -136,12 +136,12 @@ package BDD.Asserts is
    function Identity (Str : String) return String is (Str);
    package Strings is new BAG.Asserts_Simple (String, Identity);
 
-   procedure Assert
+   procedure Assert_Equal
      (Val1, Val2 : String;
       Msg : String := "";
       Location   : String := GNAT.Source_Info.Source_Location;
       Entity     : String := GNAT.Source_Info.Enclosing_Entity)
-      renames Strings.Assert;
+      renames Strings.Assert_Equal;
    procedure Assert_Not_Equal
      (Val1, Val2 : String;
       Msg : String := "";

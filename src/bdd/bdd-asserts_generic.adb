@@ -166,11 +166,11 @@ package body BDD.Asserts_Generic is
 
    package body Asserts is
 
-      ------------
-      -- Assert --
-      ------------
+      ------------------
+      -- Assert_Equal --
+      ------------------
 
-      procedure Assert
+      procedure Assert_Equal
         (Val1, Val2 : T;
          Msg        : String := "";
          Location   : String := GNAT.Source_Info.Source_Location;
@@ -185,7 +185,7 @@ package body BDD.Asserts_Generic is
                Location => Location,
                Entity   => Entity);
          end if;
-      end Assert;
+      end Assert_Equal;
    end Asserts;
 
    --------------------
@@ -194,11 +194,11 @@ package body BDD.Asserts_Generic is
 
    package body Asserts_Simple is
 
-      ------------
-      -- Assert --
-      ------------
+      ------------------
+      -- Assert_Equal --
+      ------------------
 
-      procedure Assert
+      procedure Assert_Equal
         (Val1, Val2 : T;
          Msg        : String := "";
          Location   : String := GNAT.Source_Info.Source_Location;
@@ -212,7 +212,7 @@ package body BDD.Asserts_Generic is
                Location => Location,
                Entity   => Entity);
          end if;
-      end Assert;
+      end Assert_Equal;
 
       ----------------------
       -- Assert_Not_Equal --

@@ -1,0 +1,222 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Ideas &mdash; GNAT Behavior Driven Development 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/adacore.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GNAT Behavior Driven Development 1.0 documentation" href="index.html" />
+    <link rel="prev" title="Customizing the BDD library" href="customizing.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="customizing.html" title="Customizing the BDD library"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">GNAT Behavior Driven Development 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/adacore_transparent.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Ideas</a><ul>
+<li><a class="reference internal" href="#unit-tests">Unit tests</a></li>
+<li><a class="reference internal" href="#input-format">Input format</a></li>
+<li><a class="reference internal" href="#cross-testing">Cross testing</a></li>
+<li><a class="reference internal" href="#gps-testing">GPS testing</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="customizing.html"
+                        title="previous chapter">Customizing the BDD library</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/ideas.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="ideas">
+<h1>Ideas<a class="headerlink" href="#ideas" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This section is specific to AdaCore</p>
+</div>
+<p>Here are the various ideas we currently have.</p>
+<div class="section" id="unit-tests">
+<h2>Unit tests<a class="headerlink" href="#unit-tests" title="Permalink to this headline">¶</a></h2>
+<p>This BDD framework is usable in a context of unit testing.  However, creating
+one new step per function we want to test is heavy. One approach might be to
+have a special tag which indicates the name of the function that is being
+tested:</p>
+<div class="highlight-python"><div class="highlight"><pre>@subprogram: subp_name
+Scenario Outline: Testing a subprogram
+   When I pass the parameters &lt;param1&gt;
+   Then I should get &lt;result&gt;
+
+   Examples:
+       | param1 | result |
+       |   2    |    3   |
+       |   3    |    4   |
+</pre></div>
+</div>
+<p>This requires help from the code generation step so that we automatically
+generate steps based on the &#64;subprogram tags</p>
+</div>
+<div class="section" id="input-format">
+<h2>Input format<a class="headerlink" href="#input-format" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="file docutils literal"><span class="pre">.feature</span></code> file format is a kind of standard for BDD, and is
+supported by multiple tools out there out of the box (Sphinx, vi,...).</p>
+<p>However, in our context, it might make sense to provide a second parser that
+would embed the scenarios in a Rest document. This would allow us to easily
+generate documentation from the tests.</p>
+</div>
+<div class="section" id="cross-testing">
+<h2>Cross testing<a class="headerlink" href="#cross-testing" title="Permalink to this headline">¶</a></h2>
+<p>Testing embedded softward presents several challenges.</p>
+<p>The most important goal for Gnatbdd is that we do not force the user to
+embed any addition code (from the BDD library) into his application. This
+would restrict what we can do in the BDD library.</p>
+<p>So instead the idea is that all the parsing of the feature files, and the
+matching with the regexps be done on the host. The implementer of the steps
+is then responsible for running code on his target.</p>
+<p>Of course, we might want to provide additional support libraries to make
+the coding of steps easier. For instance:</p>
+<ul class="simple">
+<li>provide code to help spawn an application on a board or in QEmu.</li>
+<li>provide code for communicating with a running application, for instance
+via sockets (when available, e.g. VxWorks), via gdb (available on most
+targets), via QEmu,..</li>
+</ul>
+<p>This library could be reused in other contexts, like AUnit for instance
+for the cases where we do not want to run the AUnit code on the target
+for instance.</p>
+<p>Black box testing in this context means spawning the application, and
+comparing its output, which can be done more or less generically.</p>
+<p>White box testing can be done through gdb, or via having specific code in
+the application. So the user would for instance have the following setup:</p>
+<div class="highlight-python"><div class="highlight"><pre>Host                                   Target
+====                                   ======
+gnatbdd
+   |
+match step with regexp
+   |
+executes Ada code for the step
+   |
+User Ada code communicates with
+target, passing a step number and
+arguments
+         \------------------------------ Run a test function that
+                                    has a big case statement testing
+                                    the step number.
+           -----------------------------
+          /
+ Compare the output, and raise assert_error
+ as needed
+</pre></div>
+</div>
+<p>We could also for instance have a special tag &#64;remote_call (suggested by
+Thomas)</p>
+<p>Jerome suggested another approach: at compile time, we generate code for the
+scenario (basically all the calls to the step subprograms), and this is the
+code that gets sent to the target and executed remotely by the GNATbdd
+framework.</p>
+</div>
+<div class="section" id="gps-testing">
+<h2>GPS testing<a class="headerlink" href="#gps-testing" title="Permalink to this headline">¶</a></h2>
+<p>GPS is a complex application to test, because most steps (like clicking a
+button) require that the execution of the next step waits for a specific delay
+or event.</p>
+<p>These asynchronous steps could be handled in several ways:</p>
+<ul class="simple">
+<li>Run GPS as a separate process (spawned by a first step), then all other
+steps communicate with it via sockets (GPS server), and wait for a response
+from GPS indicating we can continue. This requires two way communication,
+and might not be very efficient.</li>
+<li>We could also generate a set of python code to be executed by the test and
+send this all at once to GPS, and then parse the result. Should be more
+efficient, but needs a small protocol so that GNATbdd can report which
+step failed.</li>
+<li>Another approach is to run the scenario in a thread, which automatically
+suspends itself when the step is asynchronous and waits for the main
+GNATbdd thread to unblock it. GNATbdd would do this under some conditions,
+and the user would provide the necessary support subprogram. For instance,
+in the case of GPS we would setup a timeout or idle callback.</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="customizing.html" title="Customizing the BDD library"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">GNAT Behavior Driven Development 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2013-2016, AdaCore.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

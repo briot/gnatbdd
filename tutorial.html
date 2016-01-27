@@ -1,0 +1,603 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorial &mdash; GNAT Behavior Driven Development 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/adacore.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GNAT Behavior Driven Development 1.0 documentation" href="index.html" />
+    <link rel="next" title="Behavior Driven Development" href="bdd.html" />
+    <link rel="prev" title="GNAT Behavior Driven Development" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="bdd.html" title="Behavior Driven Development"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="GNAT Behavior Driven Development"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">GNAT Behavior Driven Development 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/adacore_transparent.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tutorial</a><ul>
+<li><a class="reference internal" href="#the-calculator-application">The calculator application</a></li>
+<li><a class="reference internal" href="#first-test-simple-addition">First test: simple addition</a></li>
+<li><a class="reference internal" href="#running-the-test">Running the test</a></li>
+<li><a class="reference internal" href="#writing-the-step-definitions">Writing the step definitions</a></li>
+<li><a class="reference internal" href="#adding-multiple-tests">Adding multiple tests</a></li>
+<li><a class="reference internal" href="#using-tables">Using tables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">GNAT Behavior Driven Development</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="bdd.html"
+                        title="next chapter">Behavior Driven Development</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/tutorial.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>This manual starts with a hands-on tutorial, that demonstrates various
+aspect of gnatbdd.</p>
+<p>The purpose of this tool is to act as a high-level testing framework, where
+tests are described in such a way that they can be understood by the various
+parties involved in the development of an application.</p>
+<div class="section" id="the-calculator-application">
+<h2>The calculator application<a class="headerlink" href="#the-calculator-application" title="Permalink to this headline">¶</a></h2>
+<p>In theory, BDD (see <a class="reference internal" href="bdd.html#behavior-driven-development"><span>Behavior Driven Development</span></a>) development starts
+with writing the tests, and then modify the code until the test passes.
+However, in most cases you will be starting with an existing application, so
+this tutorial will follow that typical case.</p>
+<p>We will therefore assume we have implemented a very simple stack-based
+RPN calculator (where operands are pushed on the stack, and then the operation
+is applied to the top elements on the stack). Let&#8217;s keep it very simple for now,
+and assume we have the following <code class="file docutils literal"><span class="pre">src/calculator.ads</span></code> spec file:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="kd">package</span> <span class="nc">Calculator</span> <span class="kr">is</span>
+    <span class="kd">procedure</span> <span class="nf">Reset</span><span class="p">;</span>
+    <span class="c1">--  Empty the stack</span>
+
+    <span class="kd">procedure</span> <span class="nf">Enter</span> <span class="p">(</span><span class="nv">Value</span> <span class="p">: </span><span class="nv">String</span><span class="p">);</span>
+    <span class="c1">--  Push a new operand on the stack (if Value is an integer) or</span>
+    <span class="c1">--  compute an operation (only &quot;+&quot; is supported for now)</span>
+    <span class="c1">--  The stack is limited to 5 entries.</span>
+
+    <span class="kd">function</span> <span class="nf">Peek</span> <span class="nf">return</span> <span class="nf">Integer</span><span class="p">;</span>
+    <span class="c1">--  Return the value at the top of the stack</span>
+<span class="kr">end</span> <span class="nf">Calculator</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>It is not necessary to look at the body to test this application, so we will
+omit it in this documentation. It is available in the gnatbdd source package
+should you wish to reproduce and expand this example.</p>
+<p>We also need to compile this application. For this, we will use a GNAT
+project file, which also allows us to edit the application in GPS and use
+gprbuild to build. The project file <code class="file docutils literal"><span class="pre">calc.gpr</span></code> should contains:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="n">project</span> <span class="n">Calc</span> <span class="kr">is</span>
+   <span class="kr">for</span> <span class="n">Source_Dirs</span> <span class="kn">use</span> <span class="p">(</span><span class="s">&quot;src&quot;</span><span class="p">);</span>
+   <span class="kr">for</span> <span class="n">Object_Dir</span> <span class="kn">use</span> <span class="s">&quot;obj&quot;</span><span class="p">;</span>
+<span class="kr">end</span> <span class="nf">Calc</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="first-test-simple-addition">
+<h2>First test: simple addition<a class="headerlink" href="#first-test-simple-addition" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s now write our first test, checking that we can do a simple addition.
+Tests are written in text files with the <code class="file docutils literal"><span class="pre">.feature</span></code> extension (by
+default). They will generally be found in a subdirectory, so let&#8217;s create
+the file <code class="file docutils literal"><span class="pre">features/first.feature</span></code>, with the following contents:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="k">Feature:</span><span class="nf"> simple operations</span>
+<span class="nf">   A series of basic tests for simple operations</span>
+
+<span class="nf">   </span><span class="k">Scenario:</span><span class="nf"> simple addition</span>
+<span class="k">      When </span><span class="nf">I enter &quot;</span><span class="s">1</span><span class="nf">&quot;</span>
+<span class="nf">      </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">2</span><span class="nf">&quot;</span>
+<span class="nf">      </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">+</span><span class="nf">&quot;</span>
+<span class="nf">      </span><span class="k">Then </span><span class="nf">I should read </span><span class="s">3</span><span class="nf"></span>
+</pre></div>
+</div>
+<p>Tests are called <strong>Scenarios</strong>, and they are grouped into <strong>Features</strong>. Each
+Feature is supposed to deal with one specific aspect of the application, but
+it might take several tests to fully test that feature. In the example above,
+we have added a simple textual description of the feature, which is similar to
+a high-level requirement for the feature.</p>
+<p>We have then written, in English, a number of <strong>steps</strong> to execute for this
+scenario.</p>
+</div>
+<div class="section" id="running-the-test">
+<h2>Running the test<a class="headerlink" href="#running-the-test" title="Permalink to this headline">¶</a></h2>
+<p>We need two steps to run the test.</p>
+<p>The first step is to generate an executable, the <strong>driver</strong>, which includes
+(part of) your application&#8217;s source code and part of the library provided
+with gnatbdd. We&#8217;ll generate this executable with:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nf">&gt; gnatbdd -Pcalc.gpr</span>
+</pre></div>
+</div>
+<p>The result of running this test are two new files in the object directory of your
+project (in our case these are <code class="file docutils literal"><span class="pre">obj/driver.adb</span></code> and <code class="file docutils literal"><span class="pre">obj/driver.gpr</span></code>).</p>
+<p>Let&#8217;s then compile this driver:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nf">&gt; gprbuild -Pobj/driver.gpr</span>
+</pre></div>
+</div>
+<p>This second step has generated the executable <code class="file docutils literal"><span class="pre">obj/driver</span></code>, which is in
+charge of parsing each of our features files and execute the corresponding
+scenarios.</p>
+<p>The two steps above need to be performed only when your application&#8217;s code
+changes, or when the glue code (see below) changes. But you then use this
+same driver to run (or re-run) any number of features files.</p>
+<p>Let&#8217;s do that now:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nf">&gt; ./obj/driver --color=no</span>
+</pre></div>
+</div>
+<p>The output will by default use colors, which we cannot easily reproduce in this
+manual. So we added the &#8211;color=no switch to explicitly disable colors, and so
+that the output you get is exactly the one we show below. Feel free to experiment
+without this switch to get colors (if your terminal supports them):</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nf">U</span>
+<span class="k">Feature:</span><span class="nf"> simple operations</span>
+<span class="nf">  A series of basic tests for simple operations</span>
+
+<span class="nf">  </span><span class="k">Scenario:</span><span class="nf"> Simple addition   # first.feature#1:4</span>
+<span class="k">    When </span><span class="nf">I enter &quot;</span><span class="s">1</span><span class="nf">&quot;          # [UNDEFINED] first.feature:</span><span class="s">5</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">2</span><span class="nf">&quot;           # [UNDEFINED] first.feature:</span><span class="s">6</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">+</span><span class="nf">&quot;           # [UNDEFINED] first.feature:</span><span class="s">7</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">Then </span><span class="nf">I should read </span><span class="s">3</span><span class="nf">      # [UNDEFINED] first.feature:</span><span class="s">8</span><span class="nf"></span>
+
+
+<span class="s">1</span><span class="nf"> features</span>
+<span class="s">1</span><span class="nf"> scenarios (</span><span class="s">1</span><span class="nf"> undefined)</span>
+<span class="s">4</span><span class="nf"> steps (</span><span class="s">4</span><span class="nf"> undefined)</span>
+<span class="s">0</span><span class="nf">m</span><span class="s">0.000</span><span class="nf">s</span>
+</pre></div>
+</div>
+<p>The first line indicates that the driver has executed one scenario, where
+it found undefined steps (i.e. it saw some text, but did not know how to
+execute the corresponding code &#8211; not so surprising, we have done nothing
+so far). The rest of the output shows more details for the scenarios that
+failed (by default, the driver does not show the scenarios that passed).</p>
+</div>
+<div class="section" id="writing-the-step-definitions">
+<h2>Writing the step definitions<a class="headerlink" href="#writing-the-step-definitions" title="Permalink to this headline">¶</a></h2>
+<p>We now need to write a bit more code to match the English text that
+describes the steps with the actual code to execute.</p>
+<p>This is done through regular expressions associated with subprograms.
+These subprograms will be searched for in either the sources of your
+application (by using the project you passed in parameter to gnatbdd) or
+in any number of additional directories. For now, we will do the latter
+and create the step definitions outside of our standard project.</p>
+<p>We thus create the following <code class="file docutils literal"><span class="pre">features/step_definitions/mysteps1.ads</span></code>:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="kd">package</span> <span class="nc">MySteps1</span> <span class="kr">is</span>
+
+    <span class="c1">--  @when ^I enter &quot;(.*)&quot;$</span>
+    <span class="kd">procedure</span> <span class="nf">When_I_Enter</span> <span class="p">(</span><span class="nv">Value</span> <span class="p">: </span><span class="nv">String</span><span class="p">);</span>
+
+    <span class="c1">--  @then ^I should read (\d+)$</span>
+    <span class="kd">procedure</span> <span class="nf">Then_I_Should_Read</span> <span class="p">(</span><span class="nv">Result</span> <span class="p">: </span><span class="nv">Integer</span><span class="p">);</span>
+<span class="kr">end</span> <span class="nf">MySteps1</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The most important thing to notice is that this is standard Ada, which will be
+compiled through gprbuild as usual when we build the driver.</p>
+<p>The second thing to notice are the two special comments which contain regular
+expressions. They start with one of the keywords <em>&#64;when</em>, <em>&#64;given</em>, <em>&#64;then</em>
+(and a few others), which can be used interchangeably. These keywords are
+followed by the actual regular expression. The full set of regular expressions
+from <code class="file docutils literal"><span class="pre">GNAT.Regpat</span></code> is supported, although in most cases you will mostly
+be using a lot of plain text including one or more parenthesis group. These
+parenthesis groups will be automatically passed as parameters to the procedure
+whose spec is just after this comment.</p>
+<p>For instance, when gnatbdd sees a step that starts with &#8220;I enter&#8221; and then
+some quoted text, it will call the subprogram <cite>When_I_Enter</cite> and pass it the
+text as parameter.</p>
+<p>The second example is slightly more interesting. The regular expression
+expects to find a number after &#8220;I should read&#8221;. This number is read as text,
+but since our subprogram expects an <cite>Integer</cite>, gnatbdd will automatically
+convert it to an integer before calling <cite>Then_I_Should_Read</cite>.</p>
+<p>Let&#8217;s write the body for these step definitions:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="kn">with</span> <span class="nn">BDD.Asserts</span><span class="p">;</span>  <span class="kn">use</span> <span class="nn">BDD.Asserts</span><span class="p">;</span>
+<span class="kn">with</span> <span class="nn">Calculator</span><span class="p">;</span>   <span class="kn">use</span> <span class="nn">Calculator</span><span class="p">;</span>
+<span class="kd">package</span> <span class="kd">body</span> <span class="nc">MySteps1</span> <span class="kr">is</span>
+
+   <span class="kd">procedure</span> <span class="nf">When_I_Enter</span> <span class="p">(</span><span class="nv">Value</span> <span class="p">: </span><span class="nv">String</span><span class="p">)</span> <span class="kr">is</span>
+   <span class="kr">begin</span>
+      <span class="n">Enter</span> <span class="p">(</span><span class="n">Value</span><span class="p">);</span>
+   <span class="kr">end</span> <span class="nf">When_I_Enter</span><span class="p">;</span>
+
+   <span class="kd">procedure</span> <span class="nf">Then_I_Should_Read</span> <span class="p">(</span><span class="nv">Result</span> <span class="p">: </span><span class="nv">Integer</span><span class="p">)</span> <span class="kr">is</span>
+   <span class="kr">begin</span>
+      <span class="n">Assert</span> <span class="p">(</span><span class="n">Result</span><span class="p">,</span> <span class="n">Peek</span><span class="p">);</span>
+   <span class="kr">end</span> <span class="nf">Then_I_Should_Read</span><span class="p">;</span>
+<span class="kr">end</span> <span class="nf">My_Steps1</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This is very simple code, which needs to use both our application&#8217;s code
+(<cite>Calculator</cite>), and a part of the gnatbdd library which makes its easy to
+compare integers, strings and various other types. When the assertion fails,
+an error will be raised by the <cite>Assert</cite> procedure, and caught by the driver
+to report an error to the user.</p>
+<p>Remember we have put these step definitions in a directory that is not part
+of our <code class="file docutils literal"><span class="pre">calc.gpr</span></code> project. We will need to pass this directory to
+gnatbdd, which can either be done on the command line, or in general be done
+directly from the project file so that we do not have to repeat them every
+time we run gnatbdd. Let&#8217;s modify <code class="file docutils literal"><span class="pre">calc.gpr</span></code> as such:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="n">project</span> <span class="n">Calc</span> <span class="kr">is</span>
+   <span class="kr">for</span> <span class="n">Source_Dirs</span> <span class="kn">use</span> <span class="p">(</span><span class="s">&quot;src&quot;</span><span class="p">);</span>
+   <span class="kr">for</span> <span class="n">Object_Dir</span> <span class="kn">use</span> <span class="s">&quot;obj&quot;</span><span class="p">;</span>
+
+   <span class="kd">package</span> <span class="nc">GnatBDD</span> <span class="kr">is</span>
+      <span class="kr">for</span> <span class="n">Switches</span> <span class="kn">use</span> <span class="p">(</span><span class="s">&quot;--steps=features/step_definitions&quot;</span><span class="p">);</span>
+   <span class="kr">end</span> <span class="nf">GnatBDD</span><span class="p">;</span>
+<span class="kr">end</span> <span class="nf">Calc</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>At this point, let&#8217;s re-run gnatbdd and recompile the driver:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="o">&gt;</span> <span class="n">gnatbdd</span> <span class="o">-</span><span class="n">Pcalc</span>
+<span class="o">&gt;</span> <span class="n">gprbuild</span> <span class="o">-</span><span class="n">Pobj</span><span class="o">/</span><span class="n">driver</span><span class="p">.</span><span class="n">gpr</span>
+<span class="o">&gt;</span> <span class="p">.</span><span class="o">/</span><span class="n">obj</span><span class="o">/</span><span class="n">driver</span> <span class="c1">--color=no</span>
+</pre></div>
+</div>
+<p>And when we rerun our tests, we get the much more satisfying:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nf">.</span>
+<span class="s">1</span><span class="nf"> features</span>
+<span class="s">1</span><span class="nf"> scenarios (</span><span class="s">1</span><span class="nf"> passed)</span>
+<span class="s">4</span><span class="nf"> steps (</span><span class="s">4</span><span class="nf"> passed)</span>
+<span class="s">0</span><span class="nf">m</span><span class="s">0.000</span><span class="nf">s</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="adding-multiple-tests">
+<h2>Adding multiple tests<a class="headerlink" href="#adding-multiple-tests" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s imagine we want to add more tests that will perform essentially the
+same steps: enter the two operands on the stack, then enter the operation,
+and check the result. We could simply copy-paste the scenario as we have
+written it, but that would result in a very long features files.</p>
+<p>Instead, we will use another feature, namely <strong>Scenario Outlines</strong>. Basically,
+we will write a generic version of the test, and then a number of examples on
+which we want to apply this generic. Here is the code we will now add to our
+<code class="file docutils literal"><span class="pre">features/first.feature</span></code> file:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="k">Scenario Outline:</span><span class="nf"> testing operators</span>
+<span class="k">   When </span><span class="nf">I enter &quot;</span><span class="nv">&lt;first&gt;</span><span class="nf">&quot;</span>
+<span class="nf">   </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="nv">&lt;second&gt;</span><span class="nf">&quot;</span>
+<span class="nf">   </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="nv">&lt;operation&gt;</span><span class="nf">&quot;</span>
+<span class="nf">   </span><span class="k">Then </span><span class="nf">I should read </span><span class="nv">&lt;result&gt;</span><span class="nf"></span>
+<span class="nf">   </span><span class="k">Examples:</span>
+<span class="k">      |</span><span class="nv"> first</span><span class="k">  |</span><span class="nv"> second</span><span class="k"> |</span><span class="nv"> operation</span><span class="k"> |</span><span class="nv"> result</span><span class="k"> |</span><span class="nf"></span>
+<span class="k">      |</span><span class="s">  10</span><span class="k">    |</span><span class="s">  20</span><span class="k">    |</span><span class="s">   +</span><span class="k">       |</span><span class="s"> 30</span><span class="k">     |</span><span class="nf"></span>
+<span class="k">      |</span><span class="s">  20</span><span class="k">    |</span><span class="s">  10</span><span class="k">    |</span><span class="s">   -</span><span class="k">       |</span><span class="s"> 10</span><span class="k">     |</span><span class="nf"></span>
+<span class="k">      |</span><span class="s">  10</span><span class="k">    |</span><span class="s">  20</span><span class="k">    |</span><span class="s">   +</span><span class="k">       |</span><span class="s"> 40</span><span class="k">     |</span>
+</pre></div>
+</div>
+<p>Each of the names between brackets will be substituted with the value in
+the corresponding column of the table. Each row will result in one execution
+of the outline. Since there are no new steps defined, and the application code
+has not changed, we do not even need to rebuild the driver. We can directly
+run the test, and get the following output:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nf">.F</span>
+<span class="k">Feature:</span><span class="nf"> simple operations</span>
+<span class="nf">  A series of basic tests for simple operations</span>
+
+<span class="nf">  </span><span class="k">Scenario Outline:</span><span class="nf"> testing operators# first.feature#2:10</span>
+<span class="k">    When </span><span class="nf">I enter &quot;</span><span class="s">10</span><span class="nf">&quot;           # [OK] first.feature:</span><span class="s">11</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">20</span><span class="nf">&quot;            # [OK] first.feature:</span><span class="s">12</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">+</span><span class="nf">&quot;             # [OK] first.feature:</span><span class="s">13</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">Then </span><span class="nf">I should read </span><span class="s">30</span><span class="nf">       # [OK] first.feature:</span><span class="s">14</span><span class="nf"></span>
+
+<span class="nf">    </span><span class="k">When </span><span class="nf">I enter &quot;</span><span class="s">20</span><span class="nf">&quot;           # [OK] first.feature:</span><span class="s">11</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">10</span><span class="nf">&quot;            # [OK] first.feature:</span><span class="s">12</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">-</span><span class="nf">&quot;             # [FAILED] first.feature:</span><span class="s">13</span><span class="nf"></span>
+<span class="nf">      Exception name: PROGRAM_ERROR</span>
+<span class="nf">      Message: Unknown operation: -</span>
+<span class="nf">      Call stack traceback locations:</span>
+<span class="nf">      </span><span class="s">0</span><span class="nf">x</span><span class="s">10</span><span class="nf">a</span><span class="s">80</span><span class="nf">ccb</span><span class="s">3</span><span class="nf"> ...</span>
+<span class="nf">      at BDD.Asserts_Generic.From_Exception::bdd-asserts_generic.adb:</span><span class="s">139</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">Then </span><span class="nf">I should read </span><span class="s">10</span><span class="nf">       # [SKIPPED] first.feature:</span><span class="s">14</span><span class="nf"></span>
+
+<span class="nf">    </span><span class="k">When </span><span class="nf">I enter &quot;</span><span class="s">10</span><span class="nf">&quot;           # [OK] first.feature:</span><span class="s">11</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">20</span><span class="nf">&quot;            # [FAILED] first.feature:</span><span class="s">12</span><span class="nf"></span>
+<span class="nf">      Exception name: CONSTRAINT_ERROR</span>
+<span class="nf">      Message: Calculator stack overflow</span>
+<span class="nf">      Call stack traceback locations:</span>
+<span class="nf">      </span><span class="s">0</span><span class="nf">x</span><span class="s">10</span><span class="nf">a</span><span class="s">80</span><span class="nf">c</span><span class="s">919</span><span class="nf"> ...</span>
+<span class="nf">      at BDD.Asserts_Generic.From_Exception::bdd-asserts_generic.adb:</span><span class="s">139</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">+</span><span class="nf">&quot;             # [SKIPPED] first.feature:</span><span class="s">13</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">Then </span><span class="nf">I should read </span><span class="s">40</span><span class="nf">       # [SKIPPED] first.feature:</span><span class="s">14</span><span class="nf"></span>
+
+
+<span class="s">1</span><span class="nf"> features</span>
+<span class="s">2</span><span class="nf"> scenarios (</span><span class="s">1</span><span class="nf"> passed, </span><span class="s">1</span><span class="nf"> failed)</span>
+<span class="s">16</span><span class="nf"> steps (</span><span class="s">11</span><span class="nf"> passed, </span><span class="s">2</span><span class="nf"> failed, </span><span class="s">3</span><span class="nf"> skipped)</span>
+<span class="s">0</span><span class="nf">m</span><span class="s">0.002</span><span class="nf">s</span>
+</pre></div>
+</div>
+<p>The first line shows that 2 scenarios were executed, the first one
+passed, the second one failed.</p>
+<p>Hum, not quite clean, why do we have failures ?</p>
+<ul class="simple">
+<li>The first example line passed, since 10+20 is indeed equal to 30.</li>
+<li>The second line failed with an unexpected exception. That exception was
+properly caught by gnatbdd, which displays some details. If we look
+back at our <code class="file docutils literal"><span class="pre">src/calculator.ads</span></code> spec, we will see that in fact
+the only supported operation is &#8220;+&#8221;, so &#8220;-&#8221; raises an exception.
+At this point, the stack of the calculator contains the result of the
+first scenario, the result of the first example, and the two operands
+we intended to use for &#8220;-&#8221;.</li>
+<li>So when the third example runs, it pushes 10 on the stack (which now
+has five elements), and tries to push 20, but the stack overflows and
+we get another internal exception.</li>
+</ul>
+<p>What we forgot to do here is to reset the calculator between each scenario
+and each example. For this, we will introduce a new step definition for
+&#8220;Given an empty calculator&#8221;. We could add it to the first scenario, as
+well as to the scenario outline. But then we&#8217;ll have to remember to write
+it for each scenario we might add to this features file. Instead, we will
+define a <strong>Background</strong> block, which basically is a set of steps run before
+each scenario and each example. Let&#8217;s edit <code class="file docutils literal"><span class="pre">features/first.feature</span></code>
+and add the following before the first scenario:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="k">Background:</span><span class="nf"></span>
+<span class="k">   Given </span><span class="nf">an empty calculator</span>
+</pre></div>
+</div>
+<p>We could generate, build and run our driver again, but we know this step is
+undefined, so all scenarios will be marked as undefined.</p>
+<p>It happens that we already have a subprogram that would be appropriate to
+implement this step. This is <cite>Calculator.Reset</cite>. It is just missing the
+regular expression, so we will edit the file and add it:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="kd">package</span> <span class="nc">Calculator</span> <span class="kr">is</span>
+
+   <span class="c1">-- @given ^an empty calculator$</span>
+   <span class="kd">procedure</span> <span class="nf">Reset</span><span class="p">;</span>
+
+   <span class="p">...</span>
+<span class="kr">end</span> <span class="nf">Calculator</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This time, the step is defined in the application sources, but as we
+mentioned before these are already automatically parsed by gnatbdd, so
+we can now generate, build and run:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nf">&gt; gnatbdd -Pcalc</span>
+<span class="nf">&gt; gprbuild -Pobj/driver.gpr</span>
+<span class="nf">&gt; ./obj/driver --color=no</span>
+</pre></div>
+</div>
+<p>and now we get:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nf">..F</span>
+<span class="k">Feature:</span><span class="nf"> simple operations</span>
+<span class="nf">  A series of basic tests for simple operations</span>
+
+<span class="nf">  </span><span class="k">Scenario Outline:</span><span class="nf"> testing operators# first.feature#2:13</span>
+<span class="k">    When </span><span class="nf">I enter &quot;</span><span class="s">10</span><span class="nf">&quot;           # [OK] first.feature:</span><span class="s">14</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">20</span><span class="nf">&quot;            # [OK] first.feature:</span><span class="s">15</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">+</span><span class="nf">&quot;             # [OK] first.feature:</span><span class="s">16</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">Then </span><span class="nf">I should read </span><span class="s">30</span><span class="nf">       # [OK] first.feature:</span><span class="s">17</span><span class="nf"></span>
+
+<span class="nf">    </span><span class="k">When </span><span class="nf">I enter &quot;</span><span class="s">20</span><span class="nf">&quot;           # [OK] first.feature:</span><span class="s">14</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">10</span><span class="nf">&quot;            # [OK] first.feature:</span><span class="s">15</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">-</span><span class="nf">&quot;             # [FAILED] first.feature:</span><span class="s">16</span><span class="nf"></span>
+<span class="nf">      Exception name: PROGRAM_ERROR</span>
+<span class="nf">      Message: Unknown operation: -</span>
+<span class="nf">      Call stack traceback locations:</span>
+<span class="nf">      </span><span class="s">0</span><span class="nf">x</span><span class="s">10e254</span><span class="nf">cb</span><span class="s">3</span><span class="nf"> ...</span>
+<span class="nf">      at BDD.Asserts_Generic.From_Exception::bdd-asserts_generic.adb:</span><span class="s">139</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">Then </span><span class="nf">I should read </span><span class="s">10</span><span class="nf">       # [SKIPPED] first.feature:</span><span class="s">17</span><span class="nf"></span>
+
+<span class="nf">    </span><span class="k">When </span><span class="nf">I enter &quot;</span><span class="s">10</span><span class="nf">&quot;           # [OK] first.feature:</span><span class="s">14</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">20</span><span class="nf">&quot;            # [OK] first.feature:</span><span class="s">15</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf">I enter &quot;</span><span class="s">+</span><span class="nf">&quot;             # [OK] first.feature:</span><span class="s">16</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">Then </span><span class="nf">I should read </span><span class="s">40</span><span class="nf">       # [FAILED] first.feature:</span><span class="s">17</span><span class="nf"></span>
+<span class="nf">       </span><span class="s">40</span><span class="nf"> /=  </span><span class="s">30</span><span class="nf"></span>
+<span class="nf">      at MySteps</span><span class="s">1.</span><span class="nf">Then_I_Should_Read::mysteps</span><span class="s">1.</span><span class="nf">adb:</span><span class="s">14</span><span class="nf"></span>
+
+
+<span class="s">1</span><span class="nf"> features</span>
+<span class="s">2</span><span class="nf"> scenarios (</span><span class="s">1</span><span class="nf"> passed, </span><span class="s">1</span><span class="nf"> failed)</span>
+<span class="s">17</span><span class="nf"> steps (</span><span class="s">14</span><span class="nf"> passed, </span><span class="s">2</span><span class="nf"> failed, </span><span class="s">1</span><span class="nf"> skipped)</span>
+<span class="s">0</span><span class="nf">m</span><span class="s">0.002</span><span class="nf">s</span>
+</pre></div>
+</div>
+<p>The last exception is gone, and we now get an error (yes, 10+20 is not 40).
+Notice how the call to <cite>Assert</cite> lists both the expected and actual values,
+which is often enough to understand the error without entering the debugger.</p>
+<p>We can fix the features file to expect 30 instead of 40.</p>
+<p>At the same time, we implement support for &#8220;-&#8221; in our calculator, since this
+is now needed to pass our tests. This is the traditional BDD approach: write
+the test first, then write the code.</p>
+</div>
+<div class="section" id="using-tables">
+<h2>Using tables<a class="headerlink" href="#using-tables" title="Permalink to this headline">¶</a></h2>
+<p>We add an issue previously with the contents of the stack. Let&#8217;s add a new
+test that will check this content.</p>
+<p>The idea is to enter a number of values on the stack (we already have a
+step definition for this), and then compare the stack with an expected
+output. To describe this expected output, we will make use of another
+aspect of the features language, the <strong>tables</strong>. We have already seen
+an instance of such a table when we defined a scenario outline before,
+although that was in a slightly different context.</p>
+<p>Let&#8217;s add the test to <code class="file docutils literal"><span class="pre">features/first.feature</span></code>:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="k">Scenario:</span><span class="nf"> Checking stack contents</span>
+<span class="k">   When </span><span class="nf">I enter &quot;</span><span class="s">10</span><span class="nf">&quot;</span>
+<span class="nf">   </span><span class="k">And </span><span class="nf"> I enter &quot;</span><span class="s">20</span><span class="nf">&quot;</span>
+<span class="nf">   </span><span class="k">And </span><span class="nf"> I enter &quot;</span><span class="s">30</span><span class="nf">&quot;</span>
+<span class="nf">   </span><span class="k">And </span><span class="nf"> I enter &quot;</span><span class="s">40</span><span class="nf">&quot;</span>
+<span class="nf">   </span><span class="k">Then </span><span class="nf">the stack should contain</span>
+<span class="k">      |</span><span class="s"> value</span><span class="k"> |</span><span class="nf"></span>
+<span class="k">      |</span><span class="s"> 10</span><span class="k">    |</span><span class="nf"></span>
+<span class="k">      |</span><span class="s"> 20</span><span class="k">    |</span><span class="nf"></span>
+<span class="k">      |</span><span class="s"> 31</span><span class="k">    |</span><span class="nf"></span>
+<span class="k">      |</span><span class="s"> 40</span><span class="k">    |</span>
+</pre></div>
+</div>
+<p>And, as usual, we need to provide the step definition. Let&#8217;s add it
+to <code class="file docutils literal"><span class="pre">features/step_definitions/mysteps.ads</span></code>, although it could of course
+be in any other source file:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="kn">with</span> <span class="nn">BDD.Tables</span><span class="p">;</span>    <span class="kn">use</span> <span class="nn">BDD.Tables</span><span class="p">;</span>
+<span class="kd">package</span> <span class="nc">MySteps1</span> <span class="kr">is</span>
+
+   <span class="c1">--  @then ^the stack should contain$</span>
+   <span class="kd">procedure</span> <span class="nf">Then_The_Stack_Should_Contain</span> <span class="p">(</span><span class="nv">Expected</span> <span class="p">: </span><span class="nv">BDD</span><span class="p">.</span><span class="nv">Tables</span><span class="p">.</span><span class="nv">Table</span><span class="p">);</span>
+
+<span class="kr">end</span> <span class="nf">MySteps1</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>There are a few differences with our previous step definitions. Since the table
+is given on a different line, it should not be part of the regular expression.
+But we still want to indicate in the parameters of the subprogram that a table
+is expected. That should be the last parameter, and its type should be exactly
+<cite>BDD.Tables.Table</cite> (this is a textual comparison, no cross-reference from the
+compiler). With this, gnatbdd will automatically recognize that a table is part
+of the step and will be passed to the subprogram.</p>
+<p>Let&#8217;s look at the implementation:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="kd">package</span> <span class="kd">body</span> <span class="nc">MySteps1</span> <span class="kr">is</span>
+
+   <span class="kd">procedure</span> <span class="nf">Then_The_Stack_Should_Contain</span> <span class="p">(</span><span class="nv">Expected</span> <span class="p">: </span><span class="nv">Table</span><span class="p">)</span> <span class="kr">is</span>
+      <span class="n">Actual</span> <span class="p">:</span> <span class="n">Table</span> <span class="p">:=</span> <span class="n">Create</span><span class="p">;</span>
+      <span class="no">Stack</span>  <span class="p">:</span> <span class="kr">constant</span> <span class="n">Integer_Array</span> <span class="p">:=</span> <span class="n">Peek_Stack</span><span class="p">;</span>
+   <span class="kr">begin</span>
+      <span class="kr">for</span> <span class="n">S</span> <span class="ow">in</span> <span class="n">Stack</span><span class="p">&#39;</span><span class="na">Range</span> <span class="kr">loop</span>
+         <span class="n">Actual</span><span class="p">.</span><span class="n">Put</span> <span class="p">(</span><span class="n">Column</span> <span class="p">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="n">Row</span> <span class="p">=&gt;</span> <span class="n">S</span><span class="p">,</span> <span class="n">Value</span> <span class="p">=&gt;</span> <span class="n">Stack</span> <span class="p">(</span><span class="n">S</span><span class="p">)&#39;</span><span class="na">Img</span><span class="p">);</span>
+      <span class="kr">end</span> <span class="kr">loop</span><span class="p">;</span>
+
+      <span class="n">Assert</span> <span class="p">(</span><span class="n">Expected</span> <span class="p">=&gt;</span> <span class="n">Expected</span><span class="p">,</span> <span class="n">Actual</span> <span class="p">=&gt;</span> <span class="n">Actual</span><span class="p">);</span>
+   <span class="kr">end</span> <span class="nf">Then_The_Stack_Should_Contain</span><span class="p">;</span>
+
+<span class="kr">end</span> <span class="nf">MySteps1</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Here we build another table from the actual contents of the stack, and do a
+diff between the two tables. We&#8217;ll see when we run the test that gnatbdd is
+able to nicely display diffs in table, using colors when possible, so that it
+is easy to see at a glance where any error is.</p>
+<p>In the best BDD tradition, we have now implemented a test before we even had
+the code for it in our calculator, so now we need to improve our calculator
+until the test passes. Here goes the change in <code class="file docutils literal"><span class="pre">src/calculator.ads</span></code>,
+with a corresponding body (not shown here):</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="kd">package</span> <span class="nc">Calculator</span> <span class="kr">is</span>
+    <span class="p">...</span>
+
+    <span class="kd">type</span> <span class="kt">Integer_Array</span> <span class="kr">is</span> <span class="kr">array</span> <span class="p">(</span><span class="kt">Natural</span> <span class="kr">range</span> <span class="p">&lt;&gt;)</span> <span class="kr">of</span> <span class="kt">Integer</span><span class="p">;</span>
+    <span class="kd">function</span> <span class="nf">Peek_Stack</span> <span class="nf">return</span> <span class="nf">Integer_Array</span><span class="p">;</span>
+
+<span class="kr">end</span> <span class="nf">Calculator</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>With these various additions, we can now run our test as usual:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="o">&gt;</span> <span class="n">gnatbdd</span> <span class="o">-</span><span class="n">Pcalc</span>
+<span class="o">&gt;</span> <span class="n">gprbuild</span> <span class="o">-</span><span class="n">Pobj</span><span class="o">/</span><span class="n">driver</span><span class="p">.</span><span class="n">gpr</span>
+<span class="o">&gt;</span> <span class="p">.</span><span class="o">/</span><span class="n">obj</span><span class="o">/</span><span class="n">driver</span> <span class="c1">--color=no</span>
+</pre></div>
+</div>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nf">...F</span>
+<span class="k">Feature:</span><span class="nf"> A first feature</span>
+<span class="nf">  This is not very useful, we are just testing that we can execute basic</span>
+<span class="nf">  calculator tests.</span>
+
+<span class="nf">  </span><span class="k">Scenario:</span><span class="nf"> Checking stack contents   # first.feature#3:25</span>
+<span class="k">    When </span><span class="nf">I enter &quot;</span><span class="s">10</span><span class="nf">&quot;                 # [OK] first.feature:</span><span class="s">26</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf"> I enter &quot;</span><span class="s">20</span><span class="nf">&quot;                 # [OK] first.feature:</span><span class="s">27</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf"> I enter &quot;</span><span class="s">30</span><span class="nf">&quot;                 # [OK] first.feature:</span><span class="s">28</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">And </span><span class="nf"> I enter &quot;</span><span class="s">40</span><span class="nf">&quot;                 # [OK] first.feature:</span><span class="s">29</span><span class="nf"></span>
+<span class="nf">    </span><span class="k">Then </span><span class="nf">the stack should contain     # [FAILED] first.feature:</span><span class="s">30</span><span class="nf"></span>
+<span class="k">      |</span><span class="s"> 10</span><span class="k">       |</span><span class="nf"></span>
+<span class="k">      |</span><span class="s"> 20</span><span class="k">       |</span><span class="nf"></span>
+<span class="k">      |</span><span class="s"> 30 /= 31</span><span class="k"> |</span><span class="nf"></span>
+<span class="k">      |</span><span class="s"> 40</span><span class="k">       |</span>
+
+
+<span class="s">1</span><span class="nf"> features</span>
+<span class="s">3</span><span class="nf"> scenarios (</span><span class="s">2</span><span class="nf"> passed, </span><span class="s">1</span><span class="nf"> failed)</span>
+<span class="s">22</span><span class="nf"> steps (</span><span class="s">21</span><span class="nf"> passed, </span><span class="s">1</span><span class="nf"> failed)</span>
+<span class="s">0</span><span class="nf">m</span><span class="s">0.003</span><span class="nf">s</span>
+</pre></div>
+</div>
+<p>The test is obviously wrong, so let&#8217;s fix the test, rerun, and all is clean !</p>
+<p>This concludes this small tutorial. The rest of this document will go into
+further details for each of the steps we have seen here, as well as quite a few
+additional capabilities in gnatbdd.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="bdd.html" title="Behavior Driven Development"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="GNAT Behavior Driven Development"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">GNAT Behavior Driven Development 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2013-2016, AdaCore.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

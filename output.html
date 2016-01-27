@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Controlling the output &mdash; GNAT Behavior Driven Development 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/adacore.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GNAT Behavior Driven Development 1.0 documentation" href="index.html" />
+    <link rel="next" title="Customizing the BDD library" href="customizing.html" />
+    <link rel="prev" title="The test driver" href="driver.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="customizing.html" title="Customizing the BDD library"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="driver.html" title="The test driver"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">GNAT Behavior Driven Development 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/adacore_transparent.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Controlling the output</a><ul>
+<li><a class="reference internal" href="#colors">Colors</a></li>
+<li><a class="reference internal" href="#quiet-and-verbose-output">Quiet and verbose output</a></li>
+<li><a class="reference internal" href="#redirecting-the-output">Redirecting the output</a></li>
+<li><a class="reference internal" href="#log-files">Log files</a></li>
+<li><a class="reference internal" href="#exit-status">Exit status</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="driver.html"
+                        title="previous chapter">The test driver</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="customizing.html"
+                        title="next chapter">Customizing the BDD library</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/output.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="controlling-the-output">
+<h1>Controlling the output<a class="headerlink" href="#controlling-the-output" title="Permalink to this headline">¶</a></h1>
+<p>The driver provides a rich set of options for controlling the output.</p>
+<div class="section" id="colors">
+<h2>Colors<a class="headerlink" href="#colors" title="Permalink to this headline">¶</a></h2>
+<p id="index-0">Color output is enabled by default when the terminal supports it. It is used to
+highlight passing, failing and skipped tests. The driver attempts to detect
+automatically whether advanced features like colors or moving the cursor are
+supported. However, you can also force a specific setting by using one of:</p>
+<ul>
+<li><p class="first"><code class="xref std std-option docutils literal"><span class="pre">--color=yes</span></code></p>
+<p>Forces the use of colors in the output. This is in particular useful when the
+output is redirected to a file which you intend to display in a console later
+on. The driver always uses ANSI escape sequences when redirecting to a file,
+so on Windows you should install <a class="reference external" href="https://github.com/adoxa/ansicon/">ANSICON</a>.
+This is not necessary when you are directly displaying the output in the
+console though.</p>
+</li>
+<li><p class="first"><code class="xref std std-option docutils literal"><span class="pre">--color=no</span></code></p>
+<p>Disable the use of colors. The driver will output strings such as &#8220;[OK]&#8221;,
+&#8220;[FAILED]&#8221; or &#8220;[SKIPPED]&#8221; instead.</p>
+</li>
+<li><p class="first"><code class="xref std std-option docutils literal"><span class="pre">--color=auto</span></code>  (the default)</p>
+</li>
+</ul>
+</div>
+<div class="section" id="quiet-and-verbose-output">
+<h2>Quiet and verbose output<a class="headerlink" href="#quiet-and-verbose-output" title="Permalink to this headline">¶</a></h2>
+<p id="index-1">Depending on your use of the tests (and for instance whether you are using
+GNATbdd interactively or as part of an automatic testsuite), the amount of
+output needs to be controlled.</p>
+<p>Typically, a user developing the application needs to get as much information
+as possible directly in the console, so that hopefully it is easy to undertand
+why a test is failing. In fact, some users might want to see the passing tests
+as well, just to make sure the testsuite is moving forward.</p>
+<p>However, during an automatic test, all the output can be dropped, and we are
+only interested in getting a final count of passing and failing tests.</p>
+<p>All these behavior can be controlled with the following command line
+switches:</p>
+<ul>
+<li><p class="first"><code class="xref std std-option docutils literal"><span class="pre">--output=quiet</span></code></p>
+<p>The driver only displays the final count for each categories of
+tests (passed, failed and skipped).
+The output therefore looks like:</p>
+<div class="highlight-python"><div class="highlight"><pre>5 scenarios (1 skipped, 2 failed, 2 passed)
+0m1.002s
+</pre></div>
+</div>
+</li>
+<li><p class="first"><code class="xref std std-option docutils literal"><span class="pre">--output=dots</span></code>   (the default)</p>
+<p>The driver displays a &#8221;.&#8221; for each test that passes, a &#8220;F&#8221; for each
+test that fails (and will then display a full backtrace for those)
+and a &#8220;S&#8221; for skipped tests.</p>
+<p>When all features have run, the driver displays details for all tests
+that did not pass.</p>
+<p>Finally, it displays a summary for the final count for each category.</p>
+<p>The output therefore looks like the following (although colors will be
+used depending on the <code class="xref std std-option docutils literal"><span class="pre">--color</span></code> switch):</p>
+<div class="highlight-python"><div class="highlight"><pre>.F...
+
+Feature: controlling the output
+  Scenario: quiet and verbose output   # features/output.feature:3
+    Given 2 failing scenarios          # features/output.feature:4
+      and 2 passing scenarios          # features/output.feature:5
+    Then the output should look like &quot;...&quot;  # [FAILED]
+
+5 scenarios (1 failed, 4 passed)
+0m1.002s
+</pre></div>
+</div>
+</li>
+<li><p class="first"><code class="xref std std-option docutils literal"><span class="pre">--output=hide_passed</span></code></p>
+<p>In this mode, the driver does not display anything when a scenario passes,
+but displays the same backtrace as above for failed or skipped. One
+advantage is that the output of the full traces is done after each
+scenario has been run, not as a summary after all of them have run.</p>
+</li>
+<li><p class="first"><code class="xref std std-option docutils literal"><span class="pre">--output=full</span></code></p>
+<p>In this mode, the driver displays output of all scenarios, whether they
+pass or fail. The output looks like the above, but instead of displaying
+a &#8221;.&#8221;, the driver outputs the full lists of steps for that scenario.</p>
+<p>In this mode, the driver outputs each step before it is being run, thus this
+allows you to monitor which step is taking long to execute.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="redirecting-the-output">
+<h2>Redirecting the output<a class="headerlink" href="#redirecting-the-output" title="Permalink to this headline">¶</a></h2>
+<p id="index-2">By default, the driver will print its output on the screen. It is possible
+though to print to a file by using the <code class="xref std std-option docutils literal"><span class="pre">-o</span> <span class="pre">FILE</span></code> switch.</p>
+<p id="index-3">If the file ends up with the <code class="file docutils literal"><span class="pre">.html</span></code> extension, the driver will
+generate HTML output rather than textual output. This will display nicer
+in a web browser.</p>
+</div>
+<div class="section" id="log-files">
+<h2>Log files<a class="headerlink" href="#log-files" title="Permalink to this headline">¶</a></h2>
+<p id="index-4">In addition, the driver can still generate log files which contain output
+similar to the above, as well as any output done by your application
+on stdout or stderr.</p>
+<p>One log file is generated per scenario. Its name is that of the features
+file and the line number at which the scenario starts. The switch
+<code class="xref std std-option docutils literal"><span class="pre">--log=DIR</span></code> can be used to control the directory in which the
+log files are created. The default is to create them in a <code class="file docutils literal"><span class="pre">logs/</span></code>
+subdirectory of the directory where GNATbdd is run.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Should this be in the root project&#8217;s object_dir, when GNATbdd is run
+with a project in argument ?</p>
+</div>
+</div>
+<div class="section" id="exit-status">
+<h2>Exit status<a class="headerlink" href="#exit-status" title="Permalink to this headline">¶</a></h2>
+<p>On exit, the driver will set its status to the number of failed scenarios.
+As a result, it is easy to check whether there are any unexpected failures.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="customizing.html" title="Customizing the BDD library"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="driver.html" title="The test driver"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">GNAT Behavior Driven Development 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2013-2016, AdaCore.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

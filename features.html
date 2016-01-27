@@ -1,0 +1,336 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Features &mdash; GNAT Behavior Driven Development 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/adacore.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GNAT Behavior Driven Development 1.0 documentation" href="index.html" />
+    <link rel="next" title="Steps definitions" href="steps.html" />
+    <link rel="prev" title="Behavior Driven Development" href="bdd.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="steps.html" title="Steps definitions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="bdd.html" title="Behavior Driven Development"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">GNAT Behavior Driven Development 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/adacore_transparent.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Features</a><ul>
+<li><a class="reference internal" href="#syntax-of-the-features-file">Syntax of the features file</a><ul>
+<li><a class="reference internal" href="#comments">Comments</a></li>
+<li><a class="reference internal" href="#tagging">Tagging</a></li>
+<li><a class="reference internal" href="#step-configuration">Step configuration</a></li>
+<li><a class="reference internal" href="#background-scenario">Background scenario</a></li>
+<li><a class="reference internal" href="#scenario-outlines">Scenario outlines</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="bdd.html"
+                        title="previous chapter">Behavior Driven Development</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="steps.html"
+                        title="next chapter">Steps definitions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/features.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="features">
+<h1>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h1>
+<p>An application&#8217;s requirements are organized into features. Such a feature has a
+name (for instance one feature we would use for GNATbdd itself would be &#8220;Find
+features to run&#8221;), as well as a textual description. This description is only
+meant for human readers, and is not used by the automatic tool.</p>
+<p>The features are then further divided into one or more scenarios, which are
+sometimes also called &#8220;tests&#8221;. These will be discussed in the next section.</p>
+<div class="section" id="syntax-of-the-features-file">
+<h2>Syntax of the features file<a class="headerlink" href="#syntax-of-the-features-file" title="Permalink to this headline">¶</a></h2>
+<p>The syntax of the features file is based on the one from Cucumber, which is
+a BDD standard tool in the Ruby world. The grammar and syntax in those files
+is voluntarily informal, since they are meant to be editable and readable
+by people other than software developers.</p>
+<p>As a result, this documentation is mostly based on examples. Let&#8217;s start
+with the first general layout for a file:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="k">Feature:</span><span class="nf"> name of feature</span>
+<span class="nf">   high-level description</span>
+<span class="nf">   of what the feature does (plain English, not used by the tools)</span>
+
+<span class="nf">   </span><span class="k">Scenario:</span><span class="nf"> name of scenario</span>
+<span class="k">      Given </span><span class="nf">some precondition</span>
+<span class="nf">        </span><span class="k">And </span><span class="nf">some other precondition</span>
+<span class="nf">      </span><span class="k">When </span><span class="nf">I do some action</span>
+<span class="nf">       </span><span class="k">And </span><span class="nf">I do some other action</span>
+<span class="nf">      </span><span class="k">Then </span><span class="nf">I should see a specific result</span>
+<span class="nf">       </span><span class="k">And </span><span class="nf">I see something else</span>
+<span class="nf">       </span><span class="k">But </span><span class="nf">I do not see something else</span>
+</pre></div>
+</div>
+<p>There could be several <strong>scenarios</strong> within the <strong>feature</strong>. In fact, there
+could also be several features in a given file, but this is not recommended in
+general (this is an extension of the format used by cucumber).</p>
+<p>The scenario is split into several <strong>steps</strong>, each of which start on a separate
+line. The steps are introduced by one of severaal keywords, all shown in bold
+in the example above. You can use any of the keywords for any of the steps, but
+in general they have the following semantic:</p>
+<ul>
+<li><p class="first"><strong>Given</strong> puts the system in a known state, before the user starts
+interacting with it. Avoid talking about user interaction in givens.  These
+are similar to preconditions in programming languages.</p>
+<p>For instance, a given would setup a database, log in a user, and so on.</p>
+</li>
+<li><p class="first"><strong>When</strong> describes the actions performed by the user, like clicking on
+elements, providing input, and so on.</p>
+</li>
+<li><p class="first"><strong>Then</strong> observes the outcome of the actions. These observations should be
+related to the business benefit that was described in the feature.  The
+observation should be on some kind of output that is something that comes out
+of the system (report, user interface, message,...) and preferrably not
+something deeply buried in the system (use unit tests for those instead).</p>
+</li>
+</ul>
+<p>The example above indents each level of the description. This is not
+strictly mandatory, but helps make the file more readable.</p>
+<p>The keywords are case-sensitive, as is done in other BDD tools.</p>
+<div class="section" id="comments">
+<h3>Comments<a class="headerlink" href="#comments" title="Permalink to this headline">¶</a></h3>
+<p>A feature file can contain comments anywhere. These are lines whose first
+non-blank character is &#8216;#&#8217;. The comment extends to the end of the line.</p>
+</div>
+<div class="section" id="tagging">
+<h3>Tagging<a class="headerlink" href="#tagging" title="Permalink to this headline">¶</a></h3>
+<p>Features and scenarios can be tagged with one or more tags. These tags are
+specific to your application and usage of GNATbdd. Primarily, they can be used
+to run subsets of the whole set of scenarios. Here is an example:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nt">@gui</span><span class="nf"> </span><span class="nt">@editor</span><span class="nf"> </span><span class="nt">@req-1-1</span><span class="nf"></span>
+<span class="k">Feature:</span><span class="nf"> Opening an editor restores the previous location</span>
+
+<span class="nf">   @startup</span>
+<span class="nf">   </span><span class="k">Scenario:</span><span class="nf"> Restore open editors and their location on startup</span>
+<span class="k">      Given </span><span class="nf">a previous run that was editing foo.adb at line </span><span class="s">5</span><span class="nf"></span>
+<span class="nf">      </span><span class="k">When </span><span class="nf">I start the application</span>
+<span class="nf">      </span><span class="k">Then </span><span class="nf">I should see a window foo.adb at line </span><span class="s">5</span><span class="nf"></span>
+</pre></div>
+</div>
+<p>The tags of the feature automatically apply to its Scenarios</p>
+<p>Other usage of tags could be to identify <em>slow tests</em> (with &#64;slow) so that
+their timeout is increased.</p>
+<p>A tag can also be used to link a scenario to a <em>high-level requirement</em> in your
+application, for instance &#64;HLR-12-2.</p>
+<p>Tags can also be used to identify <em>expected failures</em> (for instance &#64;xfail), or
+<em>work in progress</em> (for instance &#64;wip).</p>
+</div>
+<div class="section" id="step-configuration">
+<h3>Step configuration<a class="headerlink" href="#step-configuration" title="Permalink to this headline">¶</a></h3>
+<p>Steps describe the actual actions to perform on the software, its input or its
+output. In the examples above, we have seen various sentences used to describe
+those actions. However, if we have to write a different sentence for every
+little variation, this will end up being very difficult to maintain indeed.</p>
+<p>So instead, the steps can be configured so that they apply to a wide variety of
+scenario. For instance, going back the example on the editors above, there is
+nothing specific in the test about the name <em>foo.adb</em> or the line <em>5</em>. We might
+want to rerun a similar step on file <em>bar.adb</em> at line <em>10</em>.  As we will see
+when we discuss the definition of steps, this is of course doable.</p>
+<p>But staying closer to the topic of the syntax, there are two other ways that
+the steps can be configured, namely <strong>multi-line strings</strong> and <strong>tables</strong>.</p>
+<ul>
+<li><p class="first">multi-line strings are convenient when the text to substitute contains
+several lines. They can only be used as the last part of the step, as in
+the following example:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="k">Feature:</span><span class="nf"> Entering multiple lines of text in the editor</span>
+<span class="nf">   </span><span class="k">Scenario:</span><span class="nf"> Pressing the return key on the keyboaard</span>
+<span class="k">      Given </span><span class="nf">a blank editor</span>
+<span class="nf">      </span><span class="k">When </span><span class="nf">I press the keys </span><span class="nv">&lt;a&gt;</span><span class="nf">, </span><span class="nv">&lt;enter&gt;</span><span class="nf">, </span><span class="nv">&lt;b&gt;</span><span class="nf"></span>
+<span class="nf">      </span><span class="k">Then </span><span class="nf">the editor should contain</span>
+<span class="nf">        </span><span class="k">&quot;&quot;&quot;</span><span class="s"></span>
+<span class="s">        a</span>
+<span class="s">        b</span>
+<span class="s">        </span><span class="k">&quot;&quot;&quot;</span><span class="nf"></span>
+</pre></div>
+</div>
+<p>A multi-line string starts on a line of its own just after the step itself.
+It starts with three double quotes (this is a notation that is familiar to
+all Python developers), and ends on a similar line that contains double-quotes.
+The double-quotes must appear on a line of their own.</p>
+<p>We recommend indenting the quotes and their contains relatively to the step
+itself to improve readability.</p>
+<p>The lines between the quotes form the text that is used for the step itself.
+Those lines are unindented by an amount equal to the indentation of the first
+quotes line (so in the example above there will in fact be no whitespace
+before &#8216;a&#8217; and &#8216;b&#8217; when we compare them to the actual output). If a line does
+not start with enough white spaces, GNATbdd simply removes all leading white
+spaces, but preserves the first non-white character.</p>
+</li>
+<li><p class="first">tables are another great way to provide input. They organize their data into
+columns, which are interpreted by the step as it sees fit. Here an example:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="nf">  Feature: Logging in on a website</span>
+<span class="nf">    </span><span class="k">Scenario:</span><span class="nf"> Logging with valid user account</span>
+<span class="k">       Given </span><span class="nf">the following users exist</span>
+<span class="k">         |</span><span class="s"> Name</span><span class="k">   |</span><span class="s"> Email</span><span class="k">            |</span><span class="s"> Phone</span><span class="k"> |</span><span class="nf"></span>
+<span class="k">         |</span><span class="s"> John</span><span class="k">   |</span><span class="s"> john@example.com</span><span class="k"> |</span><span class="s"> 1234</span><span class="k">  |</span><span class="nf"></span>
+<span class="k">         |</span><span class="s"> Jack</span><span class="k">   |</span><span class="s"> jack@example.com</span><span class="k"> |</span><span class="s"> 5678</span><span class="k">  |</span><span class="nf"></span>
+<span class="nf">       </span><span class="k">When </span><span class="nf">I log in as &quot;</span><span class="s">Jack</span><span class="nf">&quot;</span>
+<span class="nf">       </span><span class="k">Then </span><span class="nf">I should see the home page</span>
+
+<span class="nf">Leading and trailing spaces are ignored for each cell in the table.</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="background-scenario">
+<h3>Background scenario<a class="headerlink" href="#background-scenario" title="Permalink to this headline">¶</a></h3>
+<p>The givens in the last scenario above (providing the name of multiple users for
+a web site) would need to be duplicated if we wanted another scenario that tests
+logging in with an invalid user. Obviously, duplication is just as bad in tests
+as it is in the code itself.</p>
+<p>Instead, you can defined a background for the feature. It defines steps to be
+performed before running each of the step in the scenario. For instance, the
+feature above would be better written as:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="k">Feature:</span><span class="nf"> Logging in on a website</span>
+<span class="nf">  </span><span class="k">Background:</span><span class="nf"></span>
+<span class="k">     Given </span><span class="nf">the following users exist</span>
+<span class="k">       |</span><span class="s"> Name</span><span class="k">   |</span><span class="s"> Email</span><span class="k">            |</span><span class="s"> Phone</span><span class="k"> |</span><span class="nf"></span>
+<span class="k">       |</span><span class="s"> John</span><span class="k">   |</span><span class="s"> john@example.com</span><span class="k"> |</span><span class="s"> 1234</span><span class="k">  |</span><span class="nf"></span>
+<span class="k">       |</span><span class="s"> Jack</span><span class="k">   |</span><span class="s"> jack@example.com</span><span class="k"> |</span><span class="s"> 5678</span><span class="k">  |</span>
+
+<span class="nf">  </span><span class="k">Scenario:</span><span class="nf"> Logging with valid user account</span>
+<span class="k">     When </span><span class="nf">I log in as &quot;</span><span class="s">Jack</span><span class="nf">&quot;</span>
+<span class="nf">     </span><span class="k">Then </span><span class="nf">I should see the home page</span>
+
+<span class="nf">  </span><span class="k">Scenario:</span><span class="nf"> Logging with invalid user account</span>
+<span class="k">     When </span><span class="nf">I log in as &quot;</span><span class="s">Henry</span><span class="nf">&quot;</span>
+<span class="nf">     </span><span class="k">Then </span><span class="nf">I should see the login page</span>
+</pre></div>
+</div>
+<p>The background must be defined before any scenario.</p>
+</div>
+<div class="section" id="scenario-outlines">
+<h3>Scenario outlines<a class="headerlink" href="#scenario-outlines" title="Permalink to this headline">¶</a></h3>
+<p>We mentioned before that parts of the steps can be configured. For instance, we
+could have a feature with the following two scenarios:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="k">Feature:</span><span class="nf"> Testing addition in a calculator</span>
+<span class="nf">  </span><span class="k">Scenario:</span><span class="nf"> adding simple numbers</span>
+<span class="k">     When </span><span class="nf">I enter </span><span class="s">5</span><span class="nf"></span>
+<span class="nf">      </span><span class="k">And </span><span class="nf">I add </span><span class="s">12</span><span class="nf"></span>
+<span class="nf">     </span><span class="k">Then </span><span class="nf">I should get </span><span class="s">17</span><span class="nf"></span>
+
+<span class="nf">  </span><span class="k">Scenario:</span><span class="nf"> adding larger numbers</span>
+<span class="k">     When </span><span class="nf">I enter </span><span class="s">105</span><span class="nf"></span>
+<span class="nf">      </span><span class="k">And </span><span class="nf">I add </span><span class="s">1012</span><span class="nf"></span>
+<span class="nf">     </span><span class="k">Then </span><span class="nf">I should get </span><span class="s">1117</span><span class="nf"></span>
+</pre></div>
+</div>
+<p>The two scenarios are very similar, this is another case of duplication that
+would best be avoided.</p>
+<p>The feature file provides the notion of a <strong>Scenario Outline</strong>, which provides
+text substitution to create multiple scenarios. Here is the example above
+rewritten by taking advantage of this feature:</p>
+<div class="highlight-gherkin"><div class="highlight"><pre><span class="k">Feature:</span><span class="nf"> Testing addition in a calculator</span>
+<span class="nf">  </span><span class="k">Scenario Outline:</span><span class="nf"> adding simple numbers</span>
+<span class="k">     When </span><span class="nf">I enter </span><span class="nv">&lt;num1&gt;</span><span class="nf"></span>
+<span class="nf">      </span><span class="k">And </span><span class="nf">I add </span><span class="nv">&lt;num2&gt;</span><span class="nf"></span>
+<span class="nf">     </span><span class="k">Then </span><span class="nf">I should get </span><span class="nv">&lt;result&gt;</span><span class="nf"></span>
+
+<span class="nf">  </span><span class="k">Examples:</span>
+<span class="k">     |</span><span class="nv"> num1</span><span class="k">  |</span><span class="nv"> num2</span><span class="k">  |</span><span class="nv"> result</span><span class="k"> |</span><span class="nf"></span>
+<span class="k">     |</span><span class="s"> 5</span><span class="k">     |</span><span class="s"> 12</span><span class="k">    |</span><span class="s"> 17</span><span class="k">     |</span><span class="nf"></span>
+<span class="k">     |</span><span class="s"> 105</span><span class="k">   |</span><span class="s"> 1012</span><span class="k">  |</span><span class="s"> 1117</span><span class="k">   |</span>
+</pre></div>
+</div>
+<p>The <strong>Examples</strong> provide the values to substitute in the steps above. There
+will be one scenario executed for each line in the examples.</p>
+<p>For compatibility with other tools, the keyword <strong>Examples:</strong> can be replaced
+with <strong>Scenarios:</strong>.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="steps.html" title="Steps definitions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="bdd.html" title="Behavior Driven Development"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">GNAT Behavior Driven Development 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2013-2016, AdaCore.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

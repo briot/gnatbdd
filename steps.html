@@ -1,0 +1,586 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Steps definitions &mdash; GNAT Behavior Driven Development 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/adacore.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GNAT Behavior Driven Development 1.0 documentation" href="index.html" />
+    <link rel="next" title="The test driver" href="driver.html" />
+    <link rel="prev" title="Features" href="features.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="driver.html" title="The test driver"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="features.html" title="Features"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">GNAT Behavior Driven Development 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/adacore_transparent.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Steps definitions</a><ul>
+<li><a class="reference internal" href="#gnatbdd">GNATbdd</a></li>
+<li><a class="reference internal" href="#compiling-steps">Compiling steps</a></li>
+<li><a class="reference internal" href="#building-the-driver">Building the driver</a></li>
+<li><a class="reference internal" href="#add-files-for-step-definitions">Add files for step definitions</a></li>
+<li><a class="reference internal" href="#parameter-types">Parameter types</a><ul>
+<li><a class="reference internal" href="#using-tables-in-step-definitions">Using tables in step definitions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#assert-library">Assert library</a></li>
+<li><a class="reference internal" href="#automatic-type-conversion">Automatic type conversion</a></li>
+<li><a class="reference internal" href="#predefined-regular-expressions">Predefined Regular Expressions</a></li>
+<li><a class="reference internal" href="#predefined-steps">Predefined steps</a></li>
+<li><a class="reference internal" href="#missing-step-definitions">Missing step definitions</a></li>
+<li><a class="reference internal" href="#writing-steps-in-python">Writing steps in python</a><ul>
+<li><a class="reference internal" href="#set-up">Set up</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#asynchronous-tests">Asynchronous tests</a></li>
+<li><a class="reference internal" href="#white-box-vs-black-box-testing">White box vs Black box testing</a><ul>
+<li><a class="reference internal" href="#black-box-testing">Black box testing</a></li>
+<li><a class="reference internal" href="#white-box-testing">White box testing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="features.html"
+                        title="previous chapter">Features</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="driver.html"
+                        title="next chapter">The test driver</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/steps.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="steps-definitions">
+<h1>Steps definitions<a class="headerlink" href="#steps-definitions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="gnatbdd">
+<h2>GNATbdd<a class="headerlink" href="#gnatbdd" title="Permalink to this headline">¶</a></h2>
+<p>GNATbdd is the first tool that you will need to run as part of your testing
+framework.</p>
+<p>Its role is to aggregate, into one or more executables various pieces of
+code:</p>
+<dl class="docutils">
+<dt>Part of your application&#8217;s code</dt>
+<dd>This is the code you intend to test, and all its closure and dependencies.</dd>
+<dt>Step definitions</dt>
+<dd>These are (hopefully short) subprograms that create the link between the
+English sentences you wrote in your features files, and the actual code to
+execute.</dd>
+<dt>GNATbdd&#8217;s own library</dt>
+<dd>GNATbdd comes with an extensive library which includes looking for features
+files to run, parsing them, actually running them (or a subset of them
+depending on command line switches), and an assert library to help you
+write your own tests.</dd>
+<dt>Stubs</dt>
+<dd>It is often useful, when running test, to stub a part of your application.
+This might be done to simplify the test setup (no need for a remove server
+for instance for a distributed application), to speed up the test by
+abstracting a slower part of the application, or to help focus the tests.
+Since you might want to stub different parts of the application depending
+on the features you are testing, GNATbdd might need to generate multiple
+executables that will be run for the tests.</dd>
+</dl>
+<p>All of these will be examined in more details in this section.</p>
+<p>The general workflow is thus the following:</p>
+<div class="highlight-python"><div class="highlight"><pre>GNATbdd library      Ada step definitions
+        \                  /
+         \                /
+          \              /
+             GNATbdd    ------------   Application code
+                |
+                | generate glue code
+                | &lt;compile and link&gt;
+                |
+                \           feature files
+                 \             /
+                  \           /
+                   \         /
+                  test driver
+</pre></div>
+</div>
+<p>Given its dependencies, GNATbdd (and the compiling of the driver) only need
+to be performed when your application&#8217;s code changes, or the step definitions
+change. This step is not needed when you only change the features files
+themselves, or even if you add new features files.</p>
+</div>
+<div class="section" id="compiling-steps">
+<h2>Compiling steps<a class="headerlink" href="#compiling-steps" title="Permalink to this headline">¶</a></h2>
+<p>Now that you have described in the features file what the test should be doing
+and what the expected result should be.</p>
+<p>This is performed via the various steps defined in the scenario.  We now need
+to associate those steps (English sentences) into actual code.</p>
+<p id="index-0">GNATbdd has one mandatory parameter, <code class="xref std std-option docutils literal"><span class="pre">-P</span> <span class="pre">project.gpr</span></code>, which points to
+the project file you are using to build your application.</p>
+<p>GNATbdd will parse that project to find all its source files, and look for
+step definitions in all of the spec files.</p>
+<p id="index-1">Additionally, you can add one or more directories that are not part of your
+project, but that should also be parsed (recursively). For instance, by
+specifying <code class="xref std std-option docutils literal"><span class="pre">--steps=features/step_definitions</span></code> one or more type,
+that directory and all its subdirectories will be searched for Ada spec
+files that might contain step definitions.</p>
+<p>When you launch GNATbdd, it will search for all the Ada files in those
+directories and generate one Ada file, named by default <code class="file docutils literal"><span class="pre">driver.adb</span></code>.
+That file is generated in the object directory of the project you passed
+in argument. That directory should therefore be writable (although it will
+be created automatically if it does not exist yet).</p>
+<p id="index-2">If you wish to use another name for the driver (and therefore for the
+generated executable), you can use the <code class="xref std std-option docutils literal"><span class="pre">--driver=NAME</span></code> switch
+on the command line.</p>
+</div>
+<div class="section" id="building-the-driver">
+<h2>Building the driver<a class="headerlink" href="#building-the-driver" title="Permalink to this headline">¶</a></h2>
+<p>Once the driver has been generated by GNATbdd, you now need to compile
+it. GNATbdd has in fact also generated a project file, named by default
+<code class="file docutils literal"><span class="pre">driver.gpr</span></code> (that name is also set through the <code class="xref std std-option docutils literal"><span class="pre">--driver</span></code>
+switch).</p>
+<p>So all you have to do is hopefully:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt; gprbuild -P obj/driver.gpr
+</pre></div>
+</div>
+<p>where <code class="file docutils literal"><span class="pre">obj/</span></code> is the object directory of the application&#8217;s project.</p>
+<p>The generated project depends on three other projects:</p>
+<dl class="docutils">
+<dt>your application&#8217;s project</dt>
+<dd>This is referenced through an absolute path, so should always be found.</dd>
+<dt><code class="file docutils literal"><span class="pre">gnatbdd.gpr</span></code></dt>
+<dd>This is a project installed along with GNATbdd. It should be in one of
+the directories looked for by the compiler (which is automatic if you
+installed GNATbdd in the same directory as the compiler), or in one of
+the directories part of the <cite>GPR_PROJECT_PATH</cite> environment variable.</dd>
+<dt><code class="file docutils literal"><span class="pre">gnatcoll.gpr</span></code></dt>
+<dd>This is the project file for the GNAT Components Collection, which should
+be available the same way that <code class="file docutils literal"><span class="pre">gnatbdd.gpr</span></code> is.</dd>
+</dl>
+</div>
+<div class="section" id="add-files-for-step-definitions">
+<h2>Add files for step definitions<a class="headerlink" href="#add-files-for-step-definitions" title="Permalink to this headline">¶</a></h2>
+<p>The steps themselves can basically perform any action you want, and they
+define whether you are doing black box or white box testing (see below).</p>
+<p>The Ada packages should contain code similar to the following:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="kd">package</span> <span class="nc">My_Steps</span> <span class="kr">is</span>
+
+   <span class="c1">--  @given ^a user named (.*)$</span>
+   <span class="kd">procedure</span> <span class="nf">Set_User</span> <span class="p">(</span><span class="nv">Name</span> <span class="p">: </span><span class="nv">String</span><span class="p">);</span>
+
+   <span class="c1">--  @then ^I should get (\d+) as a result$</span>
+   <span class="kd">procedure</span> <span class="nf">Check_Result</span> <span class="p">(</span><span class="nv">Expected</span> <span class="p">: </span><span class="nv">Integer</span><span class="p">);</span>
+<span class="kr">end</span> <span class="nf">My_Steps</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The example above shows two steps defined with special comments.
+The comment must occur just before the subprogram to which it applies.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Should support custom aspects ?
+With comments, how do we handle cases where the regexp is too long
+to fix on a line, except for using pragma Style_Checks(Off).</p>
+</div>
+<p>The comments should start with one of <a class="reference external" href="mailto:'&#37;&#52;&#48;given">'<span>&#64;</span>given</a>&#8216;, <a class="reference external" href="mailto:'&#37;&#52;&#48;then">'<span>&#64;</span>then</a>&#8216; or <a class="reference external" href="mailto:'&#37;&#52;&#48;when">'<span>&#64;</span>when</a>&#8216;.
+There is no semantic difference, they only act as a way to help
+introduce the regexp.</p>
+<p>It is recommended that regular expressions always be surrounded with &#8216;^&#8217; and
+&#8216;$&#8217;, to indicate they should match the whole step definition, and not just part
+of it.</p>
+</div>
+<div class="section" id="parameter-types">
+<h2>Parameter types<a class="headerlink" href="#parameter-types" title="Permalink to this headline">¶</a></h2>
+<p>The regular expressions are matched with the step as found in the
+<code class="file docutils literal"><span class="pre">*.feature</span></code> file. The parenthesis groups found in the regexp will be
+passed as parameters to the procedure. By default, all parameters are passed as
+strings. If you use another scalar type for the parameter, GNATbdd will use a
+<cite>Type&#8217;Value (...)</cite> before passing the parameter, and raise an error if
+the type is incorrect.</p>
+<p>GNATbdd provides specific handling for a few parameter types. Note that the
+type must be written exactly as in the table below (case-insensitive), since
+GNATbdd does not contain a semantic analyzer to resolve names.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="74%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Type</th>
+<th class="head">Conversion from regexp match</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>String</td>
+<td>The parenthesis group as matched by the regexp</td>
+</tr>
+<tr class="row-odd"><td>Ada.Calendar.Time</td>
+<td>Converts a date with GNATCOLL.Utils.Time_Value.
+This supports a number of date and time formats, for
+instance &#8216;2015-06-15T12:00:00Z&#8217; or &#8216;2015-06-15&#8217; or
+&#8216;15 jun 2015&#8217; or &#8216;jun 15, 2015&#8217;.</td>
+</tr>
+<tr class="row-even"><td>others</td>
+<td>Use others&#8217;Value to convert from string</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="using-tables-in-step-definitions">
+<span id="id1"></span><h3>Using tables in step definitions<a class="headerlink" href="#using-tables-in-step-definitions" title="Permalink to this headline">¶</a></h3>
+<p>Some steps include extra information, like a table or a multi-line string.
+This information is not part of the regular expression, although the
+subprogram should have one or more parameters for it. For instance:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="kn">with</span> <span class="nn">BDD.Tables</span><span class="p">;</span>   <span class="kn">use</span> <span class="nn">BDD.Tables</span><span class="p">;</span>
+<span class="kd">package</span> <span class="nc">My_Steps</span> <span class="kr">is</span>
+
+    <span class="c1">--  @then ^I should see the following results:$</span>
+    <span class="kd">procedure</span> <span class="nf">Check_Results</span> <span class="p">(</span><span class="nv">Expected</span> <span class="p">: </span><span class="nv">BDD</span><span class="p">.</span><span class="nv">Tables</span><span class="p">.</span><span class="nv">Table</span><span class="p">);</span>
+
+<span class="kr">end</span> <span class="nf">My_Steps</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Here, GNATbdd will notice that the subprogram has one more parameter than
+there are parenthesis groups in the regular expression. It then checks for
+this extra parameter whether the type is <cite>BDD.Tables.Table</cite>. If this is the
+case, that parameter will be passed the table that the user wrote as part
+of the step.</p>
+<p>The comparison of the type is purely textual, there is no semantic analysis.
+So it might be specified exactly as <cite>BDD.Tables.Table</cite>, even if you are using
+use clauses.</p>
+</div>
+</div>
+<div class="section" id="assert-library">
+<h2>Assert library<a class="headerlink" href="#assert-library" title="Permalink to this headline">¶</a></h2>
+<p>The intent is that the steps should raise an exception
+when the step fails. GNATbdd provides the package <code class="file docutils literal"><span class="pre">BDD.Asserts</span></code> to help
+perform the tests and raise the exception when they fail. This package will
+also make sure a proper error message is logged, showing the expecting and
+actual outputs.</p>
+<p>For instance, the implementation for one of the steps above could be:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="kn">with</span> <span class="nn">BDD.Asserts</span><span class="p">;</span>   <span class="kn">use</span> <span class="nn">BDD.Asserts</span><span class="p">;</span>
+
+<span class="kd">package</span> <span class="kd">body</span> <span class="nc">My_Steps</span> <span class="kr">is</span>
+   <span class="kd">procedure</span> <span class="nf">Check_Result</span> <span class="p">(</span><span class="nv">Expected</span> <span class="p">: </span><span class="nv">Integer</span><span class="p">)</span> <span class="kr">is</span>
+      <span class="no">Actual</span> <span class="p">:</span> <span class="kr">constant</span> <span class="kt">Integer</span> <span class="p">:=</span> <span class="n">Get_Current_Result</span><span class="p">;</span>
+   <span class="kr">begin</span>
+      <span class="n">Assert</span> <span class="p">(</span><span class="n">Expected</span><span class="p">,</span> <span class="n">Actual</span><span class="p">,</span> <span class="s">&quot;Incorrect result&quot;</span><span class="p">);</span>
+   <span class="kr">end</span> <span class="nf">Check_Result</span><span class="p">;</span>
+<span class="kr">end</span> <span class="nf">My_Steps</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>When this test fails, GNATbdd will display extra information, as in:</p>
+<div class="highlight-ada"><div class="highlight"><pre>Then I should get 5 as result     # [FAILED]
+   Incorrect result: 5 /= 4 at my_steps.adb:7
+</pre></div>
+</div>
+<p>Many more variants of <cite>Assert</cite> exist, which are able to compare a lot of
+the usual Ada types, as well as more advanced types like lists of strings, or
+the tables that are used in the feature files to provide data to steps.</p>
+</div>
+<div class="section" id="automatic-type-conversion">
+<h2>Automatic type conversion<a class="headerlink" href="#automatic-type-conversion" title="Permalink to this headline">¶</a></h2>
+<p>By default, all the parenthesis group in your regular expressions are
+associated with <cite>String</cite> parameters in the subprogram that implements the
+step.</p>
+<p>However, GNATbdd also accepts other types for parameters, and will
+automatically convert the string to them. The types are matched with string
+comparison, so they must be defined exactly as how they appear in the following
+table (casing not withstanding), even if you are using use clauses in your
+packages.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="74%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Type</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>String</td>
+<td>The default parameter type</td>
+</tr>
+<tr class="row-odd"><td>Integer
+Natural</td>
+<td>Typically associated with (d+) in the regexp</td>
+</tr>
+<tr class="row-even"><td>Ada.Calendar.Time</td>
+<td><dl class="first last docutils">
+<dt>Date (including optional time and timezone)</dt>
+<dd>&#8220;2014-01-01 13:00:00+01:00&#8221;
+&#8220;Thu, 19 Dec 2014 13:59:12&#8221;
+&#8220;19/12/2014&#8221;
+&#8220;12/19/2014&#8221;</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-odd"><td>BDD.Tables.Table</td>
+<td>See <a class="reference internal" href="#using-tables-in-step-definitions"><span>Using tables in step definitions</span></a></td>
+</tr>
+<tr class="row-even"><td>other types</td>
+<td>GNATbdd will generate a type&#8217;Image call</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="predefined-regular-expressions">
+<h2>Predefined Regular Expressions<a class="headerlink" href="#predefined-regular-expressions" title="Permalink to this headline">¶</a></h2>
+<p>To simplify the writting of your steps, GNATbdd provides a number of predefined
+regular expressions that can be used in your own regular expressions. These
+expressions have a name, that can be used in your regexps by using a leading
+percent sign, as in:</p>
+<div class="highlight-ada"><div class="highlight"><pre><span class="c1">--  @then &quot;^I should get %natural results&quot;;</span>
+<span class="kd">procedure</span> <span class="nf">My_Step</span> <span class="p">(</span><span class="nv">Expected</span> <span class="p">: </span><span class="nv">Integer</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The predefined regexps are automatically included in a parenthesis group,
+so you should not add parenthesis yourself.</p>
+<p>Here is the full list of predefined regular expressions:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="14%" />
+<col width="42%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">name</th>
+<th class="head">examples</th>
+<th class="head">Ada type</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>integer</td>
+<td>-1; 0; 234</td>
+<td>String or Integer</td>
+</tr>
+<tr class="row-odd"><td>float</td>
+<td>-1.0E+10; 002E-10</td>
+<td>String or Float</td>
+</tr>
+<tr class="row-even"><td>natural</td>
+<td>2; 56</td>
+<td>String or Natural</td>
+</tr>
+<tr class="row-odd"><td>date</td>
+<td>Feb 04, 2014; 2014-02-04</td>
+<td>String or Ada.Calendar.Time</td>
+</tr>
+</tbody>
+</table>
+<p>You can use the percent symbol twice (&#8220;%%&#8221;) when you need to ignore a
+string matching one of the predefined regular expressions. For instance,
+&#8220;%%integer&#8221; would match the string &#8220;%integer&#8221; in the feature file. When
+you only when to insert a percent sign before any other string, you do not
+need to duplicate it though (so &#8220;%test&#8221; can be written exactly as is).</p>
+</div>
+<div class="section" id="predefined-steps">
+<h2>Predefined steps<a class="headerlink" href="#predefined-steps" title="Permalink to this headline">¶</a></h2>
+<p>GNATbdd itself includes some predefined steps, which you can immediately use
+in your <code class="file docutils literal"><span class="pre">.feature</span></code> file.</p>
+<p>Here is the full list of predefined steps:</p>
+<ul>
+<li><p class="first"><cite>When I run &#8216;.*&#8217;</cite></p>
+<p>This step can be used to spawn an executable (possibly with its arguments) on
+the local machine.</p>
+</li>
+<li><p class="first"><cite>Then (stdout|stderr) should be .*</cite></p>
+<p>Compare the contents of standard output or standard error with an expected
+output. In general, the last argument would be specified as a multi-string
+argument in your <code class="file docutils literal"><span class="pre">.feature</span></code> file.</p>
+</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When an application is using AWS, we could have predefined steps to connect
+to a web server and compare its output (json, html,...)</p>
+</div>
+</div>
+<div class="section" id="missing-step-definitions">
+<h2>Missing step definitions<a class="headerlink" href="#missing-step-definitions" title="Permalink to this headline">¶</a></h2>
+<p>When the <code class="file docutils literal"><span class="pre">*.feature</span></code> files contain steps that have no corresponding
+definition, they are are highlighted in a special color, and GNATbdd will
+display possible definitions for the corresponding subprograms, which you can
+copy and paste into your Ada file directly. This helps getting started.</p>
+</div>
+<div class="section" id="writing-steps-in-python">
+<h2>Writing steps in python<a class="headerlink" href="#writing-steps-in-python" title="Permalink to this headline">¶</a></h2>
+<p>Steps can also be defined in python, by creating python files with contents
+similar to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@step_regexp</span><span class="p">(</span><span class="s">&quot;^I should get :num as a result&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_result</span><span class="p">(</span><span class="n">expected</span><span class="p">):</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">get_current_result</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">expected</span> <span class="o">!=</span> <span class="n">current</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
+           <span class="s">&quot;Invalid result </span><span class="si">%d</span><span class="s"> != </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">current</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>As usual, any python file found in the <code class="file docutils literal"><span class="pre">features/step_definitions</span></code>
+directory or the one set through <code class="xref std std-option docutils literal"><span class="pre">--steps</span></code> will be analyzed,
+and those that use the <cite>&#64;step_regexp</cite> decorator.</p>
+<div class="section" id="set-up">
+<h3>Set up<a class="headerlink" href="#set-up" title="Permalink to this headline">¶</a></h3>
+<p>Often, the code for the step definitions will need some initialization
+(connecting to a database, opening a web browser,...). It is possible
+to declare any number of such initialization subprograms.</p>
+<p>Some of them will be run once per execution of the driver, others will
+be executed one per feature file.</p>
+<p>These subprograms are also declared in the step definitions files, as
+in:</p>
+<div class="highlight-python"><div class="highlight"><pre>package My_Steps is
+
+     @setup_driver
+     procedure Init_Driver;
+
+     @setup_feature
+     procedure Init_Feature;
+
+end My_Steps;
+</pre></div>
+</div>
+<p>The subprograms never take any parameter. Since they might be called
+multiple times, they also need to clean up any initialization they might
+have done before.</p>
+<p>Most of the time, it is better for these procedures to be written directly
+as specific steps in the tests, so <cite>&#64;setup_feature</cite> should in general be
+replaced with a <cite>Background</cite> section in the feature file.</p>
+</div>
+</div>
+<div class="section" id="asynchronous-tests">
+<h2>Asynchronous tests<a class="headerlink" href="#asynchronous-tests" title="Permalink to this headline">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Note sure how to implement this yet.</p>
+</div>
+<p>In some cases, it is necessary to stop executing steps to give some time for
+the application to complete its handling, and then come back to the execution
+of the test. In particular, this is often necessary when testing graphical
+user interfaces and other event-based applications.</p>
+</div>
+<div class="section" id="white-box-vs-black-box-testing">
+<h2>White box vs Black box testing<a class="headerlink" href="#white-box-vs-black-box-testing" title="Permalink to this headline">¶</a></h2>
+<p>Testing can be done in various ways, and this section tries to provide a
+few leads on how to organize and perform your tests.</p>
+<div class="section" id="black-box-testing">
+<h3>Black box testing<a class="headerlink" href="#black-box-testing" title="Permalink to this headline">¶</a></h3>
+<p>In this mode, the application is spawned with specific arguments, and all
+interaction with it (input or output) is done only as a user would.  It is not
+possible to examine the value of specific variables, unless they have a direct
+impact on what can be seen from the outside.</p>
+<p>The main advantage is that the application is tested exactly as the user would
+use it. This mode is compatible with most applications, like command-line
+application, graphical user interfaces, web servers or embedded applications.</p>
+<p>When testing embedded applications, the test driver will run on the host, and
+the application will be spawned on the target. Communication between the two is
+the responsibility of the step definition, and could take the form of examining
+the standard output or communicating via sockets for instance.</p>
+<p>No real restriction apply to the way the step definition is written, since it
+is running on the host, not in the more limited environment of the target.</p>
+</div>
+<div class="section" id="white-box-testing">
+<h3>White box testing<a class="headerlink" href="#white-box-testing" title="Permalink to this headline">¶</a></h3>
+<p>In this mode, the step definitions can access all the public parts of your
+application&#8217;s code (or at least the public part of it). As a result, it is
+possible to inspect in details the actual start of your application, and
+perhaps catch errors earlier in the code.</p>
+<p>One of the inconvenients in this mode is that the steps themselves end up
+dragging in a lot of the application&#8217;s code, which makes the link time for
+the driver longer.</p>
+<p>More importantly, this mode might not be compatible with embedded development,
+since the driver runs on the host.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Can we run the steps directly on the target in this case, while limiting
+what features of the code we use like controlled types, memory
+allocation,...</p>
+</div>
+<p>White box testing can itself be done in one of two ways: either be linking
+the application&#8217;s code within the GNATbdd driver (because the code for the
+steps would <cite>with</cite> the application&#8217;s own packages), or by spawning an
+executable and communicating with it via various means (stdin/stdout,
+sockets, pipes,...)</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="driver.html" title="The test driver"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="features.html" title="Features"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">GNAT Behavior Driven Development 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2013-2016, AdaCore.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

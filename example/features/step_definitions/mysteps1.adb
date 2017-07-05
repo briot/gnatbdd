@@ -11,7 +11,7 @@ package body MySteps1 is
 
    procedure Then_I_Should_Read (Result : Integer) is
    begin
-      Assert (Result, Peek);
+      Assert_Equal (Result, Peek);
    end Then_I_Should_Read;
 
    procedure Then_The_Stack_Should_Contain (Expected : BDD.Tables.Table) is

@@ -34,7 +34,9 @@ test: build install build_driver
 
 # Driver only needs to be recompiled when the step definitions change
 build_driver: 
+# Build example/obj/driver.adb
 	${bindir}/gnatbdd -Pexample/calc.gpr
+# Compile this driver
 	GPR_PROJECT_PATH=${projectdir} ${GPRBUILD} -P example/obj/driver.gpr
 
 force:

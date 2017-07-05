@@ -11,3 +11,7 @@ the code until the tests pass.
 See the documentation at:
 
    http://briot.github.com/gnatbdd/
+
+To get started and run a simple example, execute
+
+   make test

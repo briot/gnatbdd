@@ -9,7 +9,7 @@ project GNATBDD_Main is
 
    package Compiler is
       for Switches ("Ada") use ("-g", "-gnata", "-gnatVa", "-gnatQ",
-                                "-gnatyg0", "-gnatwaCJe", "-gnat2012",
+                                "-gnatyg0", "-gnatwaCJ", "-gnat2012",
                                 "-gnateE");
    end Compiler;
 

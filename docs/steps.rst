@@ -154,7 +154,8 @@ The comment must occur just before the subprogram to which it applies.
     With comments, how do we handle cases where the regexp is too long
     to fix on a line, except for using pragma Style_Checks(Off).
 
-The comments should start with one of '@given', '@then' or '@when'.
+The comments should start with one of '@given', '@then', '@and', '@but'
+or '@when'.
 There is no semantic difference, they only act as a way to help
 introduce the regexp.
 

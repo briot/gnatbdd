@@ -49,7 +49,7 @@ package body Gnatbdd.Codegen is
      Compile ("^package ([_\.\w]+)", Case_Insensitive or Multiple_Lines);
 
    Cst_Comment_Re : constant Pattern_Matcher :=
-     Compile ("--\s*@(given|then|when)\s+");
+     Compile ("--\s*@(given|then|when|and|but)\s+");
    --  Matches the special comments before step definitions
 
    Cst_Setup_Re      : constant Pattern_Matcher :=

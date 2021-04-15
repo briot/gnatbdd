@@ -41,7 +41,7 @@ could also be several features in a given file, but this is not recommended in
 general (this is an extension of the format used by cucumber).
 
 The scenario is split into several **steps**, each of which start on a separate
-line. The steps are introduced by one of severaal keywords, all shown in bold
+line. The steps are introduced by one of several keywords, all shown in bold
 in the example above. You can use any of the keywords for any of the steps, but
 in general they have the following semantic:
 
@@ -57,7 +57,7 @@ in general they have the following semantic:
 * **Then** observes the outcome of the actions. These observations should be
   related to the business benefit that was described in the feature.  The
   observation should be on some kind of output that is something that comes out
-  of the system (report, user interface, message,...) and preferrably not
+  of the system (report, user interface, message,...) and preferably not
   something deeply buried in the system (use unit tests for those instead).
 
 The example above indents each level of the description. This is not

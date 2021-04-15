@@ -9,7 +9,7 @@ package MySteps1 is
    --  @then ^I should read %integer$
    procedure Then_I_Should_Read (Result : Integer);
 
-   --  @then ^the stack should contain$
+   --  @and ^the stack should contain$
    procedure Then_The_Stack_Should_Contain (Expected : BDD.Tables.Table);
 
 end MySteps1;

@@ -37,7 +37,7 @@ package body BDD.Main is
    procedure Main (Self : in out BDD.Runner.Feature_Runner'Class)
    is
       Parser   : BDD.Parser.Feature_Parser;
-      Format   : access BDD.Formatters.Formatter'Class;
+      Format   : BDD.Formatters.Formatter_Access;
       Media    : Media_Writer_Access;
    begin
       GNATCOLL.Traces.Parse_Config_File;

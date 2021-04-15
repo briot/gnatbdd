@@ -32,6 +32,7 @@ package body BDD.Media is
       Term : GNATCOLL.Terminal.Terminal_Info_Access;
       File : File_Type_Access;
    end record;
+   type File_Writer_Access is access File_Writer;
    overriding procedure Write
      (Self : not null access File_Writer;
       Text : String);
@@ -50,6 +51,7 @@ package body BDD.Media is
       Base          : not null access Media_Writer'Class;
       Current_Color : ANSI_Color := Black;
    end record;
+   type HTML_Writer_Access is access HTML_Writer;
    overriding procedure Write
      (Self : not null access HTML_Writer;
       Text : String);
@@ -109,7 +111,7 @@ package body BDD.Media is
    -----------------
 
    function Open_Stdout return Media_Writer_Access is
-      Result : constant not null access File_Writer := new File_Writer;
+      Result : constant not null File_Writer_Access := new File_Writer;
    begin
       Result.Term := new Terminal_Info;
       Result.Term.Init_For_Stdout (Colors => BDD.Colors);
@@ -127,7 +129,7 @@ package body BDD.Media is
    function Open_File
      (File : GNATCOLL.VFS.Virtual_File) return Media_Writer_Access
    is
-      Result : constant not null access File_Writer := new File_Writer;
+      Result : constant not null File_Writer_Access := new File_Writer;
    begin
       Result.File := new File_Type;
       Create (Result.File.all, Out_File, File.Display_Full_Name);
@@ -149,7 +151,7 @@ package body BDD.Media is
      (Base : not null access Media_Writer'Class)
       return Media_Writer_Access
    is
-      Result : constant not null access HTML_Writer :=
+      Result : constant not null HTML_Writer_Access :=
         new HTML_Writer'(Stdout_Term        => Base.Stdout_Term,
                          Progress_Displayed => False,
                          Base               => Base,

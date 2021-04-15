@@ -32,6 +32,7 @@ with BDD.Media;         use BDD.Media;
 package BDD.Formatters is
 
    type Formatter is abstract tagged private;
+   type Formatter_Access is access all Formatter'Class;
 
    procedure Init
      (Self    : in out Formatter;
@@ -153,7 +154,7 @@ private
 
    type Formatter is abstract tagged record
       Last_Displayed_Feature_Id : Integer := -1;
-      Output                    : access Media_Writer'Class;
+      Output                    : Media_Writer_Access;
    end record;
 
    type Formatter_Full  is new Formatter with null record;

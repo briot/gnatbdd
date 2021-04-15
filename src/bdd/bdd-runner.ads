@@ -84,7 +84,7 @@ package BDD.Runner is
 private
    type Feature_Runner is new BDD.Parser.Abstract_Feature_Runner with record
       Files  : GNATCOLL.VFS.File_Array_Access;
-      Format : access BDD.Formatters.Formatter'Class;
+      Format : BDD.Formatters.Formatter_Access;
 
       Steps_Stats        : Count_Array := (others => 0);
       Scenario_Stats     : Count_Array := (others => 0);

@@ -58,7 +58,7 @@ package body BDD.Formatters is
       Output  : not null access Media_Writer'Class)
    is
    begin
-      Self.Output := Output;
+      Self.Output := Media_Writer_Access (Output);
    end Init;
 
    -------------------

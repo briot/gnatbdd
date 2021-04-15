@@ -69,13 +69,11 @@ package BDD.Asserts_Generic is
    --  Free the memory used by Self.
    --  This should not be called directly.
 
-   function Details (Self : Assert_Error) return Error_Details_Access;
+   function Details (Self : Assert_Error) return Error_Details'Class;
    --  Returns the actual details of the exception.
-   --  Do not store the result access, which might be freed when Self is no
-   --  longer referenced by your application.
 
    procedure Set_Details
-     (Self     : not null access Error_Details;
+     (Self     : in out Error_Details'Class;
       Details  : String := "";
       Msg      : String := "";
       Location : String := GNAT.Source_Info.Source_Location;
@@ -92,7 +90,7 @@ package BDD.Asserts_Generic is
    --  Location and Entity are used to point to the code location where the
    --  error is raised.
 
-   procedure Raise_Exception (Self : not null access Error_Details'Class);
+   procedure Raise_Exception (Self : Error_Details'Class);
    pragma No_Return (Raise_Exception);
    --  Wraps Self in an Assert_Error, and raise the Unexpected_Result
    --  exception.
@@ -105,11 +103,12 @@ package BDD.Asserts_Generic is
       Status : Scenario_Status;
       Prefix : String := "");
    procedure Display
-     (Self   : not null access Error_Details;
+     (Self   : Error_Details;
       Output : not null access BDD.Media.Media_Writer'Class;
       Status : Scenario_Status;
       Prefix : String := "");
    --  Display the details on File, using Term to set appropriate colors.
+   --  Override the second to show more details in your own error types.
 
    function From_Exception (E : Exception_Occurrence) return Assert_Error;
    --  Create from the information contained in the exception
@@ -192,13 +191,14 @@ package BDD.Asserts_Generic is
 
 private
 
-   type Error_Details is new Refcounted with record
+   type Error_Details is tagged record
       Details  : Unbounded_String;
       Msg      : Unbounded_String;
       Location : Unbounded_String;
    end record;
 
-   package Errors is new GNATCOLL.Refcount.Smart_Pointers (Error_Details);
+   package Errors is new GNATCOLL.Refcount.Shared_Pointers
+      (Error_Details'Class);
    type Assert_Error is new Errors.Ref with null record;
 
    No_Error : constant Assert_Error := (Errors.Null_Ref with null record);

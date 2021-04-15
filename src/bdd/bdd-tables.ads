@@ -98,13 +98,13 @@ private
    package Row_Vectors is new Ada.Containers.Vectors
      (Positive, String_Vectors.Vector, String_Vectors."=");
 
-   type Table_Record is new GNATCOLL.Refcount.Refcounted with record
+   type Table_Record is tagged record
       Names  : String_Vectors.Vector;
       Width  : Natural := 0;
       Rows   : Row_Vectors.Vector;   --  does not include column titles
    end record;
 
-   package Table_Pointers is new GNATCOLL.Refcount.Smart_Pointers
+   package Table_Pointers is new GNATCOLL.Refcount.Shared_Pointers
      (Table_Record);
    type Table is new Table_Pointers.Ref with null record;
 

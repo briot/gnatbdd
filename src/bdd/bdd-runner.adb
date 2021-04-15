@@ -79,7 +79,7 @@ package body BDD.Runner is
    begin
       if Self.Files /= null then
          Feature_Runner'Class (Self).Run_Start;
-         Self.Format := Format;
+         Self.Format := BDD.Formatters.Formatter_Access (Format);
          Sort (Self.Files.all);
          for F in Self.Files'Range loop
             Parser.Parse (Self.Files (F), Self);

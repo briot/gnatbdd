@@ -33,7 +33,7 @@ package body BDD.Tables is
 
    function Create return Table is
       Self : Table;
-      R    : constant access Table_Record := new Table_Record;
+      R    : Table_Record;
    begin
       Self.Set (R);
       return Self;
@@ -76,7 +76,7 @@ package body BDD.Tables is
       Column : Positive;
       Name   : String)
    is
-      R : constant not null access Table_Record := Self.Get;
+      R : Table_Pointers.Reference_Type := Self.Get;
    begin
       R.Names.Reserve_Capacity
         (Ada.Containers.Count_Type (Integer'Max (Column, Self.Width)));
@@ -96,7 +96,7 @@ package body BDD.Tables is
      (Self   : Table;
       Column : Positive) return String
    is
-      R : constant not null access Table_Record := Self.Get;
+      R : Table_Pointers.Reference_Type := Self.Get;
    begin
       if R.Names.Is_Empty
         or else Integer (R.Names.Length) < Column
@@ -123,7 +123,7 @@ package body BDD.Tables is
          R.Insert (Column, Value);
       end Do_Update;
 
-      SR : constant not null access Table_Record := Self.Get;
+      SR : Table_Pointers.Reference_Type := Self.Get;
    begin
       if Row > Integer (SR.Rows.Length) then
          declare
@@ -215,7 +215,7 @@ package body BDD.Tables is
       Output : not null access BDD.Media.Media_Writer'Class;
       Prefix : String := "")
    is
-      R : constant access Table_Record := Self.Get;
+      R : Table_Pointers.Reference_Type := Self.Get;
       W : constant Integer := Self.Width;
 
       Widths : array (1 .. W) of Natural := (others => 0);

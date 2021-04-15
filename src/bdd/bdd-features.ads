@@ -227,15 +227,15 @@ private
    procedure Free (Self : in out Step);
    --  Free the memory associated with Self
 
-   type Feature_Record is new GNATCOLL.Refcount.Refcounted with record
+   type Feature_Record is tagged record
       File        : GNATCOLL.VFS.Virtual_File;
       Name        : GNAT.Strings.String_Access;
       Id          : Integer;
       Description : Ada.Strings.Unbounded.Unbounded_String;
    end record;
-   overriding procedure Free (Self : in out Feature_Record);
-   package Feature_Pointers is new GNATCOLL.Refcount.Smart_Pointers
-     (Feature_Record);
+   procedure Free (Self : in out Feature_Record);
+   package Feature_Pointers is new GNATCOLL.Refcount.Shared_Pointers
+     (Feature_Record, Free);
    type Feature is new Feature_Pointers.Ref with null record;
 
    No_Feature : constant Feature :=
@@ -244,7 +244,7 @@ private
    type Scenario_Array;  --  Can't instantiate doubly_linked_Lists
    type Scenario_Array_Access is access all Scenario_Array;
 
-   type Scenario_Record is new Refcounted with record
+   type Scenario_Record is tagged record
       Name          : Ada.Strings.Unbounded.Unbounded_String;
       Line          : Positive := 1;
       Index         : Positive := 1;
@@ -259,10 +259,10 @@ private
       --  For outlines, the list of all examples to be run, and the scenarios
       --  we are generating for them.
    end record;
-   overriding procedure Free (Self : in out Scenario_Record);
+   procedure Free (Self : in out Scenario_Record);
 
-   package Scenario_Pointers is new GNATCOLL.Refcount.Smart_Pointers
-     (Scenario_Record);
+   package Scenario_Pointers is new GNATCOLL.Refcount.Shared_Pointers
+     (Scenario_Record, Free);
    type Scenario is new Scenario_Pointers.Ref with null record;
 
    No_Scenario : constant Scenario :=

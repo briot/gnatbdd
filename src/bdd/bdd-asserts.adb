@@ -38,7 +38,7 @@ package body BDD.Asserts is
    type Error_With_Table_Access is access all Error_With_Table'Class;
 
    overriding procedure Display
-     (Self   : not null access Error_With_Table;
+     (Self   : Error_With_Table;
       Output : not null access Media_Writer'Class;
       Status : Scenario_Status;
       Prefix : String := "");
@@ -201,7 +201,7 @@ package body BDD.Asserts is
    -------------
 
    overriding procedure Display
-     (Self   : not null access Error_With_Table;
+     (Self   : Error_With_Table;
       Output : not null access Media_Writer'Class;
       Status : Scenario_Status;
       Prefix : String := "")

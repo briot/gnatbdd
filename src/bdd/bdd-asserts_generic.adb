@@ -47,9 +47,10 @@ package body BDD.Asserts_Generic is
    -- Details --
    -------------
 
-   function Details (Self : Assert_Error) return Error_Details_Access is
+   function Details (Self : Assert_Error) return Error_Details'Class is
+      R : Errors.Reference_Type := Self.Get;
    begin
-      return Error_Details_Access (Self.Get);
+      return R.Element.all;  --  a copy
    end Details;
 
    -----------------
@@ -57,7 +58,7 @@ package body BDD.Asserts_Generic is
    -----------------
 
    procedure Set_Details
-     (Self     : not null access Error_Details;
+     (Self     : in out Error_Details'Class;
       Details  : String := "";
       Msg      : String := "";
       Location : String := GNAT.Source_Info.Source_Location;
@@ -73,7 +74,7 @@ package body BDD.Asserts_Generic is
    -- Raise_Exception --
    ---------------------
 
-   procedure Raise_Exception (Self : not null access Error_Details'Class) is
+   procedure Raise_Exception (Self : Error_Details'Class) is
    begin
       Current_Exception.Set (Self);
 
@@ -92,8 +93,9 @@ package body BDD.Asserts_Generic is
       Status : Scenario_Status;
       Prefix : String := "")
    is
+      R : Errors.Reference_Type := Self.Get;
    begin
-      Display (Self.Details, Output, Status, Prefix);
+      Display (R, Output, Status, Prefix);
    end Display;
 
    -------------
@@ -101,7 +103,7 @@ package body BDD.Asserts_Generic is
    -------------
 
    procedure Display
-     (Self   : not null access Error_Details;
+     (Self   : Error_Details;
       Output : not null access BDD.Media.Media_Writer'Class;
       Status : Scenario_Status;
       Prefix : String := "")
@@ -133,7 +135,7 @@ package body BDD.Asserts_Generic is
    --------------------
 
    function From_Exception (E : Exception_Occurrence) return Assert_Error is
-      Error : constant Error_Details_Access := new Error_Details;
+      Error : Error_Details;
       Result : Assert_Error;
    begin
       Error.Set_Details (Details => Exception_Information (E));

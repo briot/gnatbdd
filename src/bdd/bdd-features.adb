@@ -71,14 +71,14 @@ package body BDD.Features is
       Name : String)
       return Feature
    is
-      R : constant not null access Feature_Record := new Feature_Record;
+      R    : Feature_Record;
       Self : Feature;
    begin
-      Self.Set (R);
       R.Name := new String'(Trim (Name, Both));
       R.File := File;
       Feature_Ids.Get_Next (R.Id);
       Trace (Me, "Create feature " & R.Id'Img);
+      Self.Set (R);
       return Self;
    end Create;
 
@@ -212,7 +212,7 @@ package body BDD.Features is
 
    procedure Add (Self : Scenario; S : not null access Step_Record'Class) is
    begin
-      Self.Get.Steps.Append (S);
+      Self.Get.Steps.Append (Step (S));
    end Add;
 
    ------------------
@@ -225,7 +225,7 @@ package body BDD.Features is
         (Scenario : BDD.Features.Scenario;
          Step     : not null access Step_Record'Class))
    is
-      SR  : constant access Scenario_Record := Self.Get;
+      SR : Scenario_Pointers.Reference_Type := Self.Get;
    begin
       for S of SR.Steps loop
          Callback (Self, S);
@@ -237,7 +237,7 @@ package body BDD.Features is
    -------------------
 
    function Longuest_Step (Self : Scenario) return Natural is
-      R : constant not null access Scenario_Record'Class := Self.Get;
+      R : Scenario_Pointers.Reference_Type := Self.Get;
    begin
       if R.Longuest_Step = -1 then
          R.Longuest_Step := Length (R.Name) + Cst_Scenario'Length + 1;
@@ -260,14 +260,14 @@ package body BDD.Features is
       Index : Positive) return Scenario
    is
       Self : Scenario;
-      R    : constant not null access Scenario_Record := new Scenario_Record;
+      R    : Scenario_Record;
    begin
-      Self.Set (R);
       R.Name    := To_Unbounded_String (Trim (Name, Both));
       R.Line    := Line;
       R.Index   := Index;
       R.Kind    := Kind;
       R.Feature := BDD.Features.Feature (Feature);
+      Self.Set (R);
       Trace (Me, "Create scenario index=" & Index'Img);
       return Self;
    end Create;
@@ -454,7 +454,7 @@ package body BDD.Features is
    ---------------------
 
    procedure Add_Example_Row (Self : Scenario; Row  : String) is
-      SR : constant access Scenario_Record := Self.Get;
+      SR : Scenario_Pointers.Reference_Type := Self.Get;
    begin
       if SR.Examples = No_Table then
          SR.Examples := Create;
@@ -577,7 +577,7 @@ package body BDD.Features is
      (Self     : Scenario;
       Callback : not null access procedure (Scenario : BDD.Features.Scenario))
    is
-      SR  : constant access Scenario_Record := Self.Get;
+      SR  : Scenario_Pointers.Reference_Type := Self.Get;
       Tmp : Scenario;
       Tmp_Step : Step;
 

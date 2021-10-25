@@ -10,7 +10,7 @@ the code until the tests pass.
 
 See the documentation at:
 
-   http://briot.github.com/gnatbdd/
+   http://briot.github.io/gnatbdd/
 
 To get started and run a simple example, execute
 
